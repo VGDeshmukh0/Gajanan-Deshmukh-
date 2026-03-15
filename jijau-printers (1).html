@@ -1,0 +1,2398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jijau Offset & Printers – Exam Paper Order System</title>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;500;600;700;800&family=Noto+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root {
+    --saffron: #FF6B00;
+    --saffron-light: #FF8C38;
+    --saffron-pale: #FFF3E8;
+    --green: #138808;
+    --green-light: #1DAD0A;
+    --green-pale: #EAF7E8;
+    --blue: #1565C0;
+    --blue-light: #1976D2;
+    --blue-pale: #E3F0FF;
+    --navy: #0D1B3E;
+    --gold: #FFD700;
+    --red: #D32F2F;
+    --purple: #6A1B9A;
+    --teal: #00796B;
+    --white: #FFFFFF;
+    --off-white: #F8F9FA;
+    --light-gray: #ECEFF1;
+    --mid-gray: #90A4AE;
+    --dark-gray: #37474F;
+    --shadow: 0 4px 20px rgba(0,0,0,0.12);
+    --shadow-lg: 0 8px 40px rgba(0,0,0,0.18);
+    --radius: 16px;
+    --radius-sm: 8px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  
+  body {
+    font-family: 'Noto Sans', sans-serif;
+    background: linear-gradient(135deg, #FFF8F0 0%, #F0F4FF 50%, #F0FFF4 100%);
+    min-height: 100vh;
+    color: var(--dark-gray);
+  }
+
+  /* ===== HEADER ===== */
+  .app-header {
+    background: linear-gradient(135deg, var(--navy) 0%, #1A237E 50%, #0D3B2E 100%);
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    position: relative;
+    overflow: hidden;
+  }
+  .app-header::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: repeating-linear-gradient(90deg, transparent, transparent 60px, rgba(255,107,0,0.05) 60px, rgba(255,107,0,0.05) 61px);
+  }
+  .header-logo {
+    width: 60px; height: 60px;
+    background: linear-gradient(135deg, var(--saffron), var(--gold));
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 28px;
+    box-shadow: 0 4px 15px rgba(255,107,0,0.4);
+    flex-shrink: 0;
+    position: relative; z-index: 1;
+  }
+  .header-text { position: relative; z-index: 1; }
+  .header-text h1 {
+    font-family: 'Baloo 2', sans-serif;
+    font-size: clamp(18px, 3vw, 26px);
+    font-weight: 800;
+    color: var(--white);
+    line-height: 1.1;
+  }
+  .header-text h1 span { color: var(--gold); }
+  .header-text p {
+    font-size: 12px;
+    color: rgba(255,255,255,0.7);
+    margin-top: 2px;
+    letter-spacing: 0.5px;
+  }
+  .year-selector {
+    margin-left: auto;
+    display: flex; align-items: center; gap: 8px;
+    position: relative; z-index: 1;
+  }
+  .year-selector label { color: rgba(255,255,255,0.8); font-size: 13px; font-weight: 500; }
+  .year-selector select {
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.3);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    backdrop-filter: blur(10px);
+  }
+  .year-selector select option { background: var(--navy); }
+
+  /* ===== TABS ===== */
+  .tabs-container {
+    display: flex;
+    background: var(--white);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .tab-btn {
+    flex: 1;
+    padding: 16px;
+    border: none;
+    background: transparent;
+    font-family: 'Baloo 2', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    border-bottom: 3px solid transparent;
+    transition: all 0.3s;
+    color: var(--mid-gray);
+  }
+  .tab-btn.active.school { color: var(--saffron); border-color: var(--saffron); background: var(--saffron-pale); }
+  .tab-btn.active.admin { color: var(--blue); border-color: var(--blue); background: var(--blue-pale); }
+  .tab-btn .tab-icon { font-size: 20px; }
+
+  /* ===== MAIN CONTENT ===== */
+  .main-content { max-width: 1200px; margin: 0 auto; padding: 24px 16px; }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* ===== CARDS ===== */
+  .card {
+    background: var(--white);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 24px;
+    margin-bottom: 20px;
+  }
+  .card-header {
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid var(--light-gray);
+  }
+  .card-icon {
+    width: 44px; height: 44px;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+    flex-shrink: 0;
+  }
+  .card-icon.saffron { background: var(--saffron-pale); }
+  .card-icon.green { background: var(--green-pale); }
+  .card-icon.blue { background: var(--blue-pale); }
+  .card-title { font-family: 'Baloo 2', sans-serif; font-size: 18px; font-weight: 700; }
+  .card-subtitle { font-size: 13px; color: var(--mid-gray); }
+
+  /* ===== FORMS ===== */
+  .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+  .form-group label {
+    font-size: 13px; font-weight: 600;
+    color: var(--dark-gray);
+    display: flex; align-items: center; gap: 4px;
+  }
+  .form-group label .req { color: var(--red); }
+  .form-control {
+    border: 2px solid var(--light-gray);
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+    font-size: 14px;
+    font-family: 'Noto Sans', sans-serif;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    background: var(--white);
+    color: var(--dark-gray);
+  }
+  .form-control:focus { outline: none; border-color: var(--saffron); box-shadow: 0 0 0 3px rgba(255,107,0,0.1); }
+  .form-control.admin-focus:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(21,101,192,0.1); }
+  select.form-control { cursor: pointer; }
+
+  /* ===== EXAM TYPE PILL SELECTOR ===== */
+  .exam-pills { display: flex; flex-wrap: wrap; gap: 10px; margin: 16px 0; }
+  .exam-pill {
+    padding: 8px 16px;
+    border-radius: 100px;
+    border: 2px solid var(--light-gray);
+    font-size: 13px; font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: var(--white);
+    color: var(--dark-gray);
+  }
+  .exam-pill:hover { border-color: var(--saffron); color: var(--saffron); }
+  .exam-pill.selected { background: var(--saffron); color: white; border-color: var(--saffron); box-shadow: 0 4px 12px rgba(255,107,0,0.3); }
+
+  /* ===== RATE DISPLAY ===== */
+  .rate-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: linear-gradient(135deg, var(--green-pale), #D0F0C0);
+    border: 1px solid var(--green-light);
+    border-radius: 100px;
+    padding: 6px 14px;
+    font-size: 13px; font-weight: 700;
+    color: var(--green);
+    margin-bottom: 16px;
+  }
+
+  /* ===== ORDER TABLE ===== */
+  .order-table-wrapper { overflow-x: auto; border-radius: 12px; border: 1px solid var(--light-gray); }
+  .order-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  .order-table thead tr {
+    background: linear-gradient(135deg, var(--navy), #1A237E);
+    color: white;
+  }
+  .order-table thead th {
+    padding: 12px 14px;
+    text-align: center;
+    font-weight: 700;
+    font-family: 'Baloo 2', sans-serif;
+    font-size: 13px;
+    white-space: nowrap;
+  }
+  .order-table thead th:first-child { text-align: left; }
+  .order-table tbody tr:nth-child(even) { background: var(--off-white); }
+  .order-table tbody tr:hover { background: var(--saffron-pale); }
+  .order-table tbody td { padding: 10px 14px; border-bottom: 1px solid var(--light-gray); vertical-align: middle; }
+  .order-table tbody td:first-child { font-weight: 600; color: var(--navy); white-space: nowrap; }
+  .order-table tbody td input {
+    width: 80px;
+    border: 1.5px solid var(--light-gray);
+    border-radius: 6px;
+    padding: 6px 8px;
+    text-align: center;
+    font-size: 13px;
+    font-family: 'Noto Sans', sans-serif;
+    transition: border-color 0.2s;
+  }
+  .order-table tbody td input:focus { outline: none; border-color: var(--saffron); }
+  .order-table tbody td.total-cell {
+    font-weight: 700;
+    color: var(--green);
+    text-align: center;
+    font-size: 14px;
+  }
+  .order-table tfoot tr { background: linear-gradient(135deg, var(--saffron-pale), #FFE0B2); }
+  .order-table tfoot td { padding: 12px 14px; font-weight: 700; font-family: 'Baloo 2', sans-serif; font-size: 14px; color: var(--navy); }
+
+  /* ===== BUTTONS ===== */
+  .btn {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 10px;
+    font-family: 'Baloo 2', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: inline-flex; align-items: center; gap: 8px;
+  }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-primary { background: linear-gradient(135deg, var(--saffron), var(--saffron-light)); color: white; box-shadow: 0 4px 15px rgba(255,107,0,0.35); }
+  .btn-primary:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(255,107,0,0.45); }
+  .btn-success { background: linear-gradient(135deg, var(--green), var(--green-light)); color: white; box-shadow: 0 4px 15px rgba(19,136,8,0.3); }
+  .btn-success:hover:not(:disabled) { transform: translateY(-2px); }
+  .btn-blue { background: linear-gradient(135deg, var(--blue), var(--blue-light)); color: white; box-shadow: 0 4px 15px rgba(21,101,192,0.3); }
+  .btn-blue:hover:not(:disabled) { transform: translateY(-2px); }
+  .btn-outline { background: white; border: 2px solid var(--light-gray); color: var(--dark-gray); }
+  .btn-outline:hover { border-color: var(--mid-gray); }
+  .btn-sm { padding: 6px 14px; font-size: 13px; border-radius: 7px; }
+  .btn-danger { background: linear-gradient(135deg, var(--red), #E53935); color: white; }
+  .btn-purple { background: linear-gradient(135deg, var(--purple), #8E24AA); color: white; }
+  .btn-teal { background: linear-gradient(135deg, var(--teal), #00897B); color: white; }
+
+  /* ===== STATUS BADGES ===== */
+  .status-badge {
+    padding: 4px 12px;
+    border-radius: 100px;
+    font-size: 12px;
+    font-weight: 700;
+    display: inline-block;
+    white-space: nowrap;
+  }
+  .status-pending { background: #FFF3E0; color: #E65100; border: 1px solid #FFB74D; }
+  .status-approved { background: var(--green-pale); color: var(--green); border: 1px solid #81C784; }
+  .status-paid { background: #E3F2FD; color: var(--blue); border: 1px solid #90CAF9; }
+
+  /* ===== ADMIN LOGIN ===== */
+  .admin-login-box {
+    max-width: 440px;
+    margin: 40px auto;
+    background: white;
+    border-radius: 20px;
+    padding: 40px;
+    box-shadow: var(--shadow-lg);
+    border-top: 5px solid var(--blue);
+  }
+  .admin-login-box h2 {
+    font-family: 'Baloo 2', sans-serif;
+    font-size: 24px; font-weight: 800;
+    color: var(--navy);
+    text-align: center;
+    margin-bottom: 8px;
+  }
+  .admin-login-box p {
+    text-align: center;
+    color: var(--mid-gray);
+    font-size: 13px;
+    margin-bottom: 28px;
+  }
+  .admin-lock-icon {
+    width: 70px; height: 70px;
+    background: linear-gradient(135deg, var(--blue), var(--blue-light));
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 32px;
+    margin: 0 auto 20px;
+    box-shadow: 0 6px 20px rgba(21,101,192,0.35);
+  }
+
+  /* ===== DASHBOARD STATS ===== */
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; margin-bottom: 24px; }
+  .stat-card {
+    border-radius: 14px;
+    padding: 18px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .stat-card::before { content: ''; position: absolute; top: -20px; right: -20px; width: 80px; height: 80px; border-radius: 50%; background: rgba(255,255,255,0.15); }
+  .stat-card.orange { background: linear-gradient(135deg, var(--saffron), #FF8C38); color: white; }
+  .stat-card.green { background: linear-gradient(135deg, var(--green), var(--green-light)); color: white; }
+  .stat-card.blue { background: linear-gradient(135deg, var(--blue), var(--blue-light)); color: white; }
+  .stat-card.purple { background: linear-gradient(135deg, var(--purple), #8E24AA); color: white; }
+  .stat-number { font-family: 'Baloo 2', sans-serif; font-size: 36px; font-weight: 800; line-height: 1; }
+  .stat-label { font-size: 13px; opacity: 0.9; margin-top: 4px; font-weight: 500; }
+  .stat-icon { font-size: 24px; margin-bottom: 8px; }
+
+  /* ===== ADMIN ORDERS TABLE ===== */
+  .admin-table-wrapper { overflow-x: auto; }
+  .admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  .admin-table thead tr { background: linear-gradient(135deg, var(--navy), #1A237E); color: white; }
+  .admin-table thead th { padding: 12px 14px; text-align: left; font-weight: 700; font-family: 'Baloo 2', sans-serif; white-space: nowrap; }
+  .admin-table tbody tr { border-bottom: 1px solid var(--light-gray); transition: background 0.15s; }
+  .admin-table tbody tr:hover { background: var(--blue-pale); }
+  .admin-table tbody td { padding: 12px 14px; vertical-align: middle; }
+  .action-btns { display: flex; gap: 6px; flex-wrap: wrap; }
+
+  /* ===== RATE EDITOR ===== */
+  .rate-editor-grid { display: grid; grid-template-columns: 1fr; gap: 20px; }
+  .rate-item {
+    background: var(--off-white);
+    border-radius: 12px;
+    padding: 16px;
+    border: 2px solid var(--light-gray);
+    transition: border-color 0.2s;
+  }
+  .rate-item:hover { border-color: var(--blue); }
+  .rate-item label { font-size: 13px; font-weight: 600; color: var(--dark-gray); margin-bottom: 8px; display: block; }
+  .rate-item .rate-input {
+    display: flex; align-items: center; gap: 8px;
+  }
+  .rate-item .currency { font-size: 16px; font-weight: 700; color: var(--green); }
+  .rate-item input {
+    flex: 1;
+    border: 2px solid var(--light-gray);
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--navy);
+    text-align: center;
+  }
+  .rate-item input:focus { outline: none; border-color: var(--blue); }
+
+  /* ===== MODAL ===== */
+  .modal-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 1000;
+    align-items: center; justify-content: center;
+    backdrop-filter: blur(4px);
+  }
+  .modal-overlay.active { display: flex; }
+  .modal {
+    background: white;
+    border-radius: 20px;
+    padding: 32px;
+    max-width: 900px;
+    width: 95%;
+    max-height: 90vh;
+    overflow-y: auto;
+    position: relative;
+    box-shadow: var(--shadow-lg);
+  }
+  .modal-close {
+    position: absolute; top: 16px; right: 16px;
+    background: var(--light-gray);
+    border: none;
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    font-size: 18px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.2s;
+  }
+  .modal-close:hover { background: var(--mid-gray); color: white; }
+  .modal h2 { font-family: 'Baloo 2', sans-serif; font-size: 20px; font-weight: 800; color: var(--navy); margin-bottom: 20px; }
+
+  /* ===== TOAST ===== */
+  .toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
+  .toast {
+    background: var(--navy);
+    color: white;
+    padding: 14px 20px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 500;
+    box-shadow: var(--shadow-lg);
+    display: flex; align-items: center; gap: 10px;
+    animation: slideInRight 0.3s ease, fadeOut 0.3s ease 2.7s forwards;
+    max-width: 320px;
+  }
+  .toast.success { border-left: 4px solid var(--green-light); }
+  .toast.error { border-left: 4px solid var(--red); }
+  .toast.info { border-left: 4px solid var(--blue-light); }
+  @keyframes slideInRight { from { transform: translateX(120%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+  @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; transform: translateY(-10px); } }
+
+  /* ===== BILL ===== */
+  .bill-container {
+    border: 2px solid var(--light-gray);
+    border-radius: 16px;
+    overflow: hidden;
+    margin-top: 20px;
+  }
+  .bill-header {
+    background: linear-gradient(135deg, var(--navy), #1A237E);
+    color: white;
+    padding: 24px 24px 20px;
+    text-align: center;
+    border-radius: var(--radius) var(--radius) 0 0;
+  }
+  .bill-header h2 { 
+    font-family: 'Baloo 2', sans-serif; 
+    font-size: 24px; 
+    font-weight: 800; 
+    color: #FFFFFF;
+    text-shadow: 0 1px 4px rgba(0,0,0,0.4);
+    letter-spacing: 0.5px;
+  }
+  .bill-header p { font-size: 13px; color: rgba(255,255,255,0.85); margin-top: 6px; }
+  .bill-body { padding: 20px 24px; }
+  .bill-info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+  .bill-info-item { font-size: 13px; }
+  .bill-info-item strong { color: var(--navy); }
+  .bill-total-box {
+    background: linear-gradient(135deg, var(--green-pale), #C8F5C0);
+    border: 2px solid var(--green-light);
+    border-radius: 12px;
+    padding: 16px 20px;
+    text-align: center;
+    margin-top: 16px;
+  }
+  .bill-total-box .amount { font-family: 'Baloo 2', sans-serif; font-size: 32px; font-weight: 800; color: var(--green); }
+  .bill-total-box .label { font-size: 14px; color: var(--dark-gray); font-weight: 600; }
+
+  /* ===== SUCCESS SCREEN ===== */
+  .success-screen {
+    text-align: center;
+    padding: 40px 20px;
+  }
+  .success-icon {
+    width: 80px; height: 80px;
+    background: linear-gradient(135deg, var(--green), var(--green-light));
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 40px;
+    margin: 0 auto 20px;
+    box-shadow: 0 8px 25px rgba(19,136,8,0.35);
+    animation: pop 0.4s ease;
+  }
+  @keyframes pop { from { transform: scale(0); } to { transform: scale(1); } }
+  .success-screen h2 { font-family: 'Baloo 2', sans-serif; font-size: 26px; font-weight: 800; color: var(--green); margin-bottom: 10px; }
+  .success-screen p { color: var(--mid-gray); font-size: 15px; }
+
+  /* ===== FILTER BAR ===== */
+  .filter-bar {
+    display: flex; flex-wrap: wrap; gap: 12px; align-items: center;
+    background: var(--off-white);
+    padding: 16px;
+    border-radius: 12px;
+    margin-bottom: 16px;
+  }
+  .filter-bar select, .filter-bar input {
+    border: 1.5px solid var(--light-gray);
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 13px;
+    font-family: 'Noto Sans', sans-serif;
+    background: white;
+  }
+  .filter-bar select:focus, .filter-bar input:focus { outline: none; border-color: var(--blue); }
+
+  /* ===== SECTION DIVIDER ===== */
+  .section-divider {
+    display: flex; align-items: center; gap: 12px;
+    margin: 20px 0 12px;
+  }
+  .section-divider span {
+    font-family: 'Baloo 2', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--navy);
+    white-space: nowrap;
+  }
+  .section-divider::before, .section-divider::after {
+    content: '';
+    flex: 1;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--light-gray), transparent);
+  }
+
+  /* ===== TABS WITHIN ADMIN ===== */
+  .admin-nav {
+    display: flex; flex-wrap: wrap; gap: 8px;
+    margin-bottom: 20px;
+    background: var(--off-white);
+    padding: 10px;
+    border-radius: 14px;
+  }
+  .admin-nav-btn {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 8px;
+    font-family: 'Baloo 2', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: var(--mid-gray);
+    background: transparent;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .admin-nav-btn.active { background: var(--blue); color: white; box-shadow: 0 4px 12px rgba(21,101,192,0.3); }
+  .admin-nav-btn:hover:not(.active) { background: var(--light-gray); color: var(--dark-gray); }
+  .admin-section { display: none; }
+  .admin-section.active { display: block; }
+
+  /* ===== EMPTY STATE ===== */
+  .empty-state { text-align: center; padding: 40px 20px; color: var(--mid-gray); }
+  .empty-state .icon { font-size: 48px; margin-bottom: 12px; }
+  .empty-state p { font-size: 15px; }
+
+  /* ===== RESPONSIVE ===== */
+  @media(max-width: 600px) {
+    .app-header { flex-wrap: wrap; }
+    .year-selector { width: 100%; justify-content: flex-end; }
+    .form-grid { grid-template-columns: 1fr; }
+    .stats-grid { grid-template-columns: 1fr 1fr; }
+    .bill-info-grid { grid-template-columns: 1fr; }
+  }
+
+  /* ===== PRINT STYLES ===== */
+  @media print {
+    .app-header, .tabs-container, .btn, .filter-bar, .admin-nav, .no-print { display: none !important; }
+    .bill-container { border: none; }
+    body.printing > *:not(#printArea) { display: none !important; }
+    #printArea { display: block !important; }
+  }
+  @keyframes loaderBar {
+    0%   { transform: translateX(-100%); }
+    50%  { transform: translateX(0%); }
+    100% { transform: translateX(100%); }
+  }
+  #printArea { display: none; }
+
+  .highlight-row { background: #FFFDE7 !important; }
+  .grand-total-row td { background: linear-gradient(135deg, var(--navy), #1A237E) !important; color: white !important; font-weight: 700; font-size: 14px; }
+
+  .indian-flag-stripe {
+    height: 4px;
+    background: linear-gradient(90deg, var(--saffron) 33.33%, white 33.33%, white 66.66%, var(--green) 66.66%);
+    width: 100%;
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== TOAST CONTAINER ===== -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- ===== HEADER ===== -->
+<div class="indian-flag-stripe"></div>
+<header class="app-header">
+  <div class="header-logo">🖨️</div>
+  <div class="header-text">
+    <h1>Jijau Offset <span>&</span> Printers</h1>
+    <p>Exam Paper Order Management System</p>
+  </div>
+  <div class="year-selector">
+    <label>📅 Year:</label>
+    <select id="academicYearSelect" onchange="changeAcademicYear(this.value)">
+      <option value="2024-25">2024-25</option>
+      <option value="2025-26" selected>2025-26</option>
+      <option value="2026-27">2026-27</option>
+      <option value="2027-28">2027-28</option>
+    </select>
+  </div>
+</header>
+
+<!-- ===== TABS ===== -->
+<div class="tabs-container">
+  <button class="tab-btn school active" onclick="switchTab('school')">
+    <span class="tab-icon">🏫</span> School Login
+  </button>
+  <button class="tab-btn admin" onclick="switchTab('admin')">
+    <span class="tab-icon">🔐</span> Admin Login
+  </button>
+</div>
+
+<!-- ===== MAIN ===== -->
+<div class="main-content">
+
+  <!-- ============================== SCHOOL TAB ============================== -->
+  <div class="tab-panel active" id="panel-school">
+
+    <!-- ORDER SUBMITTED SUCCESS -->
+    <div id="orderSuccessView" style="display:none;">
+      <div class="card">
+        <div class="success-screen">
+          <div class="success-icon">✅</div>
+          <h2>Order Submitted Successfully!</h2>
+          <p>Your exam paper order has been received.<br>Please wait for admin approval to download the bill.</p>
+          <div style="margin-top:28px;" id="billSection">
+            <div id="billPendingMsg" class="rate-badge" style="margin:0 auto 16px; display:inline-flex;">
+              ⏳ Bill will be available after admin approval.
+            </div>
+            <div id="billDownloadBtn" style="display:none;">
+              <button class="btn btn-success" style="font-size:16px;padding:14px 32px;gap:10px;" onclick="downloadBill()">
+                ⬇️ Download Bill (PDF)
+              </button>
+            </div>
+          </div>
+          <button class="btn btn-outline" style="margin-top:16px;" onclick="resetSchoolForm()">Place Another Order (Different School)</button>
+          <div style="display:flex;gap:12px;justify-content:center;margin-top:12px;">
+            <button class="btn btn-outline" onclick="schoolEditOrder()">✏️ Edit My Order</button>
+            <button class="btn btn-danger" onclick="schoolDeleteOrder()">🗑️ Delete My Order</button>
+          </div>
+        </div>
+        <!-- Bill Preview -->
+        <div id="billPreview" style="display:none;">
+          <div class="bill-container">
+            <div class="bill-header">
+              <h2>🖨️ Jijau Offset & Printers</h2>
+              <p>Exam Paper Supply Bill</p>
+            </div>
+            <div class="bill-body" id="billBody"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ORDER FORM -->
+    <div id="orderFormView">
+      <!-- School Info -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon saffron">🏫</div>
+          <div>
+            <div class="card-title">School Information</div>
+            <div class="card-subtitle">Please fill all details to place your order</div>
+          </div>
+        </div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>School Name <span class="req">*</span></label>
+            <input type="text" class="form-control" id="schoolName" placeholder="Enter school name">
+          </div>
+          <div class="form-group">
+            <label>Place / Village <span class="req">*</span></label>
+            <input type="text" class="form-control" id="schoolPlace" placeholder="Enter place">
+          </div>
+          <div class="form-group">
+            <label>Exam Department Head Name <span class="req">*</span></label>
+            <input type="text" class="form-control" id="headName" placeholder="Enter head name">
+          </div>
+          <div class="form-group">
+            <label>Mobile Number <span class="req">*</span></label>
+            <input type="tel" class="form-control" id="mobileNo" placeholder="10-digit mobile number" maxlength="10">
+          </div>
+        </div>
+      </div>
+
+      <!-- Exam Type -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-icon green">📋</div>
+          <div>
+            <div class="card-title">Select Exam Type</div>
+            <div class="card-subtitle">Choose the exam for which you need papers</div>
+          </div>
+        </div>
+        <div class="exam-pills">
+          <div class="exam-pill" onclick="selectExam('First Unit Test')">📝 First Unit Test</div>
+          <div class="exam-pill" onclick="selectExam('First Semester Exam')">📚 First Semester Exam</div>
+          <div class="exam-pill" onclick="selectExam('Second Unit Test')">✏️ Second Unit Test</div>
+          <div class="exam-pill" onclick="selectExam('Second Semester Exam')">📖 Second Semester Exam</div>
+          <div class="exam-pill" onclick="selectExam('Class 10 Practice Exam')">🎓 Class 10 Practice Exam</div>
+        </div>
+        <div id="selectedExamDisplay" style="display:none;">
+          <div style="margin-bottom:12px;">
+            <div style="font-size:13px;font-weight:700;color:var(--dark-gray);margin-bottom:6px;">💰 Rate per paper (class-wise):</div>
+            <div id="rateDisplay" style="display:flex;flex-wrap:wrap;gap:4px;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Order Table -->
+      <div class="card" id="orderTableSection" style="display:none;">
+        <div class="card-header">
+          <div class="card-icon blue">📊</div>
+          <div>
+            <div class="card-title">Class-wise Quantity</div>
+            <div class="card-subtitle">Enter number of papers required for each class</div>
+          </div>
+        </div>
+
+        <!-- Classes 1–7 -->
+        <div class="section-divider">
+          <span>🔵 Classes 1 to 7</span>
+        </div>
+        <div class="order-table-wrapper">
+          <table class="order-table" id="table1to7">
+            <thead>
+              <tr>
+                <th>Class</th>
+                <th>Marathi Medium</th>
+                <th>Semi Medium</th>
+                <th>Total</th>
+              </tr>
+            </thead>
+            <tbody id="tbody1to7"></tbody>
+            <tfoot>
+              <tr>
+                <td>📊 Sub Total (1–7)</td>
+                <td style="text-align:center;font-weight:700;" id="subMM1to7">0</td>
+                <td style="text-align:center;font-weight:700;" id="subSM1to7">0</td>
+                <td style="text-align:center;font-weight:700;color:var(--green);" id="subT1to7">0</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+
+        <!-- Classes 8–10 -->
+        <div class="section-divider" style="margin-top:24px;">
+          <span>🔴 Classes 8 to 10</span>
+        </div>
+        <div class="order-table-wrapper">
+          <table class="order-table" id="table8to10">
+            <thead>
+              <tr>
+                <th>Class</th>
+                <th>Marathi Medium</th>
+                <th>Semi Medium</th>
+                <th>Sanskrit</th>
+                <th>Hindi</th>
+                <th>Total</th>
+              </tr>
+            </thead>
+            <tbody id="tbody8to10"></tbody>
+            <tfoot>
+              <tr>
+                <td>📊 Sub Total (8–10)</td>
+                <td style="text-align:center;font-weight:700;" id="subMM8to10">0</td>
+                <td style="text-align:center;font-weight:700;" id="subSM8to10">0</td>
+                <td style="text-align:center;font-weight:700;" id="subSK8to10">0</td>
+                <td style="text-align:center;font-weight:700;" id="subHI8to10">0</td>
+                <td style="text-align:center;font-weight:700;color:var(--green);" id="subT8to10">0</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+
+        <!-- Grand Total -->
+        <div style="margin-top:20px; display:flex; flex-wrap:wrap; gap:16px; align-items:center;">
+          <div class="bill-total-box" style="flex:1; min-width:200px;">
+            <div class="label">Grand Total Papers</div>
+            <div class="amount" id="grandTotalPapers">0</div>
+          </div>
+          <div class="bill-total-box" style="flex:1; min-width:200px; background:linear-gradient(135deg,#E3F2FD,#BBDEFB); border-color:var(--blue);">
+            <div class="label">Estimated Amount</div>
+            <div class="amount" style="color:var(--blue);">₹<span id="estimatedAmount">0</span></div>
+          </div>
+        </div>
+
+        <div style="margin-top:24px; display:flex; gap:12px; flex-wrap:wrap;">
+          <button class="btn btn-primary" onclick="submitOrder()">📤 Submit Order</button>
+          <button class="btn btn-outline" onclick="resetSchoolForm()">🔄 Reset Form</button>
+        </div>
+      </div>
+    </div>
+  </div><!-- end school panel -->
+
+  <!-- ============================== ADMIN TAB ============================== -->
+  <div class="tab-panel" id="panel-admin">
+
+    <!-- ADMIN LOGIN FORM -->
+    <div id="adminLoginView">
+      <div class="admin-login-box">
+        <div class="admin-lock-icon">🔐</div>
+        <h2>Admin Access</h2>
+        <p>This panel is restricted to authorized personnel only.</p>
+        <div class="form-group" style="margin-bottom:16px;">
+          <label>Username</label>
+          <input type="text" class="form-control admin-focus" id="adminUser" placeholder="Enter username">
+        </div>
+        <div class="form-group" style="margin-bottom:24px;">
+          <label>Password</label>
+          <input type="password" class="form-control admin-focus" id="adminPass" placeholder="Enter password" onkeydown="if(event.key==='Enter')adminLogin()">
+        </div>
+        <button class="btn btn-blue" style="width:100%; justify-content:center;" onclick="adminLogin()">🔓 Login to Admin Panel</button>
+        <p style="text-align:center; margin-top:16px; font-size:12px; color:var(--mid-gray);">Default: admin / admin123</p>
+      </div>
+    </div>
+
+    <!-- ADMIN DASHBOARD -->
+    <div id="adminDashboard" style="display:none;">
+      
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:12px;">
+        <div>
+          <h2 style="font-family:'Baloo 2',sans-serif; font-size:22px; font-weight:800; color:var(--navy);">Admin Dashboard</h2>
+          <p style="font-size:13px; color:var(--mid-gray);">Academic Year: <strong id="adminYearDisplay">2025-26</strong></p>
+        </div>
+        <button class="btn btn-outline btn-sm" onclick="adminLogout()">🚪 Logout</button>
+        <button class="btn btn-outline btn-sm" onclick="showLinksModal()">🔗 Share Links</button>
+      </div>
+
+      <!-- Stats -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+        <div class="stats-grid" id="statsGrid" style="flex:1;"></div>
+        <button class="btn btn-outline btn-sm" style="margin-left:12px;white-space:nowrap;" onclick="renderStats();renderOrders();toast('Refreshed!','success');">🔄 Refresh</button>
+      </div>
+
+      <!-- Admin Nav -->
+      <div class="admin-nav">
+        <button class="admin-nav-btn active" onclick="showAdminSection('orders')">📋 All Orders</button>
+        <button class="admin-nav-btn" onclick="showAdminSection('rates')">💰 Edit Rates</button>
+        <button class="admin-nav-btn" onclick="showAdminSection('export')">📥 Export Excel</button>
+      </div>
+
+      <!-- ORDERS SECTION -->
+      <div class="admin-section active" id="admin-orders">
+        <div class="card">
+          <div class="filter-bar">
+            <input type="text" placeholder="🔍 Search school..." id="searchSchool" oninput="renderOrders()">
+            <select id="filterExam" onchange="renderOrders()">
+              <option value="">All Exam Types</option>
+              <option>First Unit Test</option>
+              <option>First Semester Exam</option>
+              <option>Second Unit Test</option>
+              <option>Second Semester Exam</option>
+              <option>Class 10 Practice Exam</option>
+            </select>
+            <select id="filterStatus" onchange="renderOrders()">
+              <option value="">All Status</option>
+              <option value="pending">Pending</option>
+              <option value="approved">Approved</option>
+              <option value="paid">Paid</option>
+            </select>
+          </div>
+          <div class="admin-table-wrapper">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>School</th>
+                  <th>Place</th>
+                  <th>Exam Type</th>
+                  <th>Total Papers</th>
+                  <th>Amount (₹)</th>
+                  <th>Status</th>
+                  <th>Payment</th>
+                  <th>Date</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="adminOrdersBody">
+                <tr><td colspan="10"><div class="empty-state"><div class="icon">📭</div><p>No orders found.</p></div></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- RATES SECTION -->
+      <div class="admin-section" id="admin-rates">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-icon saffron">💰</div>
+            <div>
+              <div class="card-title">Exam Paper Rates</div>
+              <div class="card-subtitle">Set rate per paper for each exam type</div>
+            </div>
+          </div>
+          <div class="rate-editor-grid" id="rateEditorGrid"></div>
+          <div style="margin-top:20px;">
+            <button class="btn btn-success" onclick="saveRates()">💾 Save Rates</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- EXPORT SECTION -->
+      <div class="admin-section" id="admin-export">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-icon green">📥</div>
+            <div>
+              <div class="card-title">Export to Excel</div>
+              <div class="card-subtitle">Download all orders in structured Excel format with separate sheets per exam type</div>
+            </div>
+          </div>
+          <p style="margin-bottom:20px; color:var(--dark-gray); font-size:14px;">
+            The Excel file will contain <strong>5 sheets</strong> — one for each exam type. Each sheet shows class-wise quantities in the required format.
+          </p>
+          <div style="display:flex; gap:12px; flex-wrap:wrap;">
+            <button class="btn btn-teal" onclick="exportExcel()">📊 Export All Orders (Excel)</button>
+            <button class="btn btn-purple" onclick="exportExcel('First Unit Test')">First Unit Test</button>
+            <button class="btn btn-outline" onclick="exportExcel('First Semester Exam')">First Semester</button>
+            <button class="btn btn-outline" onclick="exportExcel('Second Unit Test')">Second Unit Test</button>
+            <button class="btn btn-outline" onclick="exportExcel('Second Semester Exam')">Second Semester</button>
+            <button class="btn btn-outline" onclick="exportExcel('Class 10 Practice Exam')">Class 10 Practice</button>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- end adminDashboard -->
+  </div><!-- end admin panel -->
+
+</div><!-- end main-content -->
+
+<!-- ===== EDIT ORDER MODAL ===== -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('editModal')">✕</button>
+    <h2>✏️ Edit Order</h2>
+    <div id="editModalContent"></div>
+  </div>
+</div>
+
+<!-- ===== VIEW ORDER MODAL ===== -->
+<div class="modal-overlay" id="viewModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('viewModal')">✕</button>
+    <h2>📋 Order Details</h2>
+    <div id="viewModalContent"></div>
+  </div>
+</div>
+
+<!-- ===== COMBINED BILL MODAL ===== -->
+<div class="modal-overlay" id="combinedBillModal">
+  <div class="modal" style="max-width:780px;">
+    <button class="modal-close" onclick="closeModal('combinedBillModal')">✕</button>
+    <h2>🏫 Combined Bill</h2>
+    <div id="combinedBillContent"></div>
+  </div>
+</div>
+<div class="modal-overlay" id="deleteModal">
+  <div class="modal" style="max-width:400px; text-align:center;">
+    <div style="font-size:56px; margin-bottom:12px;">🗑️</div>
+    <h2 style="color:var(--red); margin-bottom:8px;">Delete Order?</h2>
+    <p id="deleteModalMsg" style="font-size:15px; color:var(--dark-gray); margin-bottom:24px;"></p>
+    <div style="display:flex; gap:12px; justify-content:center;">
+      <button class="btn btn-danger" id="deleteConfirmBtn">🗑️ Yes, Delete</button>
+      <button class="btn btn-outline" onclick="closeModal('deleteModal')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// DATA STORE — npoint.io cloud (free, no signup for basic use)
+// ============================================================
+const ADMIN_USER = 'admin';
+const ADMIN_PASS = 'Pps8840@';
+const EXAM_TYPES = ['First Unit Test','First Semester Exam','Second Unit Test','Second Semester Exam','Class 10 Practice Exam'];
+const CLASSES_LOW = [1,2,3,4,5,6,7];
+const CLASSES_HIGH = [8,9,10];
+
+let currentYear = '2025-26';
+let selectedExam = null;
+let adminLoggedIn = false;
+let currentOrderId = null;
+
+// URL-based view: ?view=school or ?view=admin
+const urlParams = new URLSearchParams(window.location.search);
+const VIEW_MODE = urlParams.get('view') || 'both';
+
+// ── Cloud helpers — Google Apps Script backend ──────────────
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbysQMEBj_mKieMvaJf8igpCElYNSjYCBLUUsJAfK9Ooa8SvatyKNTKJU9h9RcBdA-WM5w/exec';
+
+function getEndpointKey(year) { return `jijau_gas_${year.replace('-','_')}`; }
+function getEndpoint(year) { return GAS_URL; } // always use GAS
+
+async function fetchWithTimeout(url, options = {}, ms = 10000) {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), ms);
+  try {
+    const r = await fetch(url, { ...options, signal: controller.signal });
+    clearTimeout(id);
+    return r;
+  } catch(e) { clearTimeout(id); throw e; }
+}
+
+async function cloudGet(year) {
+  try {
+    const key = `jijau_${year.replace('-','_')}`;
+    const r = await fetchWithTimeout(`${GAS_URL}?key=${key}`);
+    const text = await r.text();
+    if (!text || text === '{}') return null;
+    return JSON.parse(text);
+  } catch(e) { return null; }
+}
+
+async function cloudSave(year, data) {
+  try {
+    const key = `jijau_${year.replace('-','_')}`;
+    // Use no-cors mode to avoid CORS issues from GitHub Pages
+    await fetch(GAS_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ key, value: data })
+    });
+    return true;
+  } catch(e) { return false; }
+}
+
+// ── Local cache + cloud sync ─────────────────────────────────
+function getCacheKey(year) { return `jijau_cache_${year.replace('-','_')}`; }
+
+function getYearData(year) {
+  try {
+    const raw = localStorage.getItem(getCacheKey(year));
+    return raw ? JSON.parse(raw) : { orders: [], rates: JSON.parse(JSON.stringify(DEFAULT_RATES)) };
+  } catch(e) {
+    return { orders: [], rates: JSON.parse(JSON.stringify(DEFAULT_RATES)) };
+  }
+}
+
+function saveYearData(year, data) {
+  localStorage.setItem(getCacheKey(year), JSON.stringify(data));
+  cloudSave(year, data).catch(() => {});
+}
+
+async function loadAndCache(year) {
+  const cloud = await cloudGet(year);
+  if (cloud) {
+    localStorage.setItem(getCacheKey(year), JSON.stringify(cloud));
+    return cloud;
+  }
+  return getYearData(year);
+}
+
+function getData()   { return getYearData(currentYear); }
+function saveData(d) { saveYearData(currentYear, d); }
+function getYearKey(year) { return getCacheKey(year); }
+
+// Rate structure matching reference image
+const CLASS_GROUPS = [
+  { key: 'g12',  label: 'Class 1 to 2',  classes: [1,2] },
+  { key: 'g34',  label: 'Class 3 to 4',  classes: [3,4] },
+  { key: 'g58',  label: 'Class 5 to 8',  classes: [5,6,7,8] },
+  { key: 'g910', label: 'Class 9 to 10', classes: [9,10] },
+];
+
+const DEFAULT_RATES = {
+  unit: {     // First & Second Unit Test
+    g12:  { mm: 4,  sm: 5  },
+    g34:  { mm: 7,  sm: 8  },
+    g58:  { mm: 11, sm: 12 },
+    g910: { mm: 17, sm: 18 },
+  },
+  term: {     // First & Second Term/Semester Exam
+    g12:  { mm: 5,  sm: 6  },
+    g34:  { mm: 8,  sm: 9  },
+    g58:  { mm: 22, sm: 23 },
+    g910: { mm: 23, sm: 24 },
+  },
+  practice: { // Class 10 Practice Exam (only class 10)
+    g910: { mm: 24, sm: 25 },
+  },
+};
+
+function getExamCategory(examType) {
+  if (examType === 'First Unit Test' || examType === 'Second Unit Test') return 'unit';
+  if (examType === 'First Semester Exam' || examType === 'Second Semester Exam') return 'term';
+  return 'practice';
+}
+
+function getGroupKey(cls) {
+  const grp = CLASS_GROUPS.find(g => g.classes.includes(+cls));
+  return grp ? grp.key : null;
+}
+
+function getRate(examType, cls, medium) {
+  const cat = getExamCategory(examType);
+  const grpKey = getGroupKey(cls);
+  if (!grpKey) return 0;
+  const data = getData();
+  const stored = data.rates?.[cat]?.[grpKey]?.[medium];
+  if (stored !== undefined) return stored;
+  return DEFAULT_RATES[cat]?.[grpKey]?.[medium] || 0;
+}
+
+function getYearKey(year) { return `jijau_bin_${year.replace('-','_')}`; }
+
+function getYearData(year) {
+  const key = `jijau_cache_${year.replace('-','_')}`;
+  try { return JSON.parse(localStorage.getItem(key)) || { orders: [], rates: JSON.parse(JSON.stringify(DEFAULT_RATES)) }; }
+  catch(e) { return { orders: [], rates: JSON.parse(JSON.stringify(DEFAULT_RATES)) }; }
+}
+
+function saveYearData(year, data) {
+  const key = `jijau_cache_${year.replace('-','_')}`;
+  localStorage.setItem(key, JSON.stringify(data));
+  // async cloud save (fire and forget)
+  cloudSave(year, data).catch(()=>{});
+}
+
+function getData() { return getYearData(currentYear); }
+function saveData(d) { saveYearData(currentYear, d); }
+
+// ============================================================
+// TABS
+// ============================================================
+function switchTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelector(`.tab-btn.${tab}`).classList.add('active');
+  document.getElementById(`panel-${tab}`).classList.add('active');
+}
+
+// ============================================================
+// ACADEMIC YEAR
+// ============================================================
+function changeAcademicYear(year) {
+  currentYear = year;
+  document.getElementById('adminYearDisplay').textContent = year;
+  if (adminLoggedIn) {
+    renderStats();
+    renderOrders();
+    renderRateEditor();
+  }
+}
+
+// ============================================================
+// TOAST
+// ============================================================
+function toast(msg, type='info') {
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  const icons = { success:'✅', error:'❌', info:'ℹ️' };
+  t.innerHTML = `<span>${icons[type]||'ℹ️'}</span> ${msg}`;
+  document.getElementById('toastContainer').appendChild(t);
+  setTimeout(() => t.remove(), 3200);
+}
+
+// ============================================================
+// SCHOOL FORM
+// ============================================================
+function selectExam(examType) {
+  selectedExam = examType;
+  document.querySelectorAll('.exam-pill').forEach(p => {
+    p.classList.toggle('selected', p.textContent.includes(examType));
+  });
+  document.getElementById('selectedExamDisplay').style.display = 'block';
+  const cat = getExamCategory(examType);
+  const rateRows = CLASS_GROUPS.map(grp => {
+    const mm = getRate(examType, grp.classes[0], 'mm');
+    const sm = getRate(examType, grp.classes[0], 'sm');
+    if (!mm && !sm) return '';
+    return `<span style="display:inline-block;background:var(--off-white);border:1px solid var(--light-gray);border-radius:8px;padding:4px 12px;font-size:12px;font-weight:700;color:var(--navy);margin:2px;">
+      ${grp.label}: <span style="color:var(--saffron)">MM &#8377;${mm}</span> / <span style="color:var(--blue)">SM &#8377;${sm}</span>
+    </span>`;
+  }).filter(Boolean).join('');
+  document.getElementById('rateDisplay').innerHTML = rateRows;
+  document.getElementById('orderTableSection').style.display = 'block';
+  buildOrderTable();
+}
+
+function buildOrderTable() {
+  // Class 1–7 table
+  const mmH = (cls) => getRate(selectedExam, cls, 'mm');
+  const smH = (cls) => getRate(selectedExam, cls, 'sm');
+
+  document.querySelector('#table1to7 thead tr').innerHTML = `
+    <th>Class</th>
+    <th>Marathi Medium</th>
+    <th>Semi Medium</th>
+    <th>Total</th>
+  `;
+  const tbody17 = document.getElementById('tbody1to7');
+  tbody17.innerHTML = '';
+  CLASSES_LOW.forEach(cls => {
+    const mm = mmH(cls), sm = smH(cls);
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>Class ${cls}<br><span style="font-size:10px;color:var(--mid-gray);">MM:&#8377;${mm} SM:&#8377;${sm}</span></td>
+      <td style="text-align:center;"><input type="number" min="0" data-class="${cls}" data-type="mm" placeholder="0" oninput="calcTotals()"></td>
+      <td style="text-align:center;"><input type="number" min="0" data-class="${cls}" data-type="sm" placeholder="0" oninput="calcTotals()"></td>
+      <td class="total-cell" id="total_${cls}">0</td>
+    `;
+    tbody17.appendChild(tr);
+  });
+
+  document.querySelector('#table8to10 thead tr').innerHTML = `
+    <th>Class</th>
+    <th>Marathi Medium</th>
+    <th>Semi Medium</th>
+    <th>Sanskrit</th>
+    <th>Hindi</th>
+    <th>Total</th>
+  `;
+  const tbody810 = document.getElementById('tbody8to10');
+  tbody810.innerHTML = '';
+  CLASSES_HIGH.forEach(cls => {
+    const mm = mmH(cls), sm = smH(cls);
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>Class ${cls}<br><span style="font-size:10px;color:var(--mid-gray);">MM:&#8377;${mm} SM:&#8377;${sm}</span></td>
+      <td style="text-align:center;"><input type="number" min="0" data-class="${cls}" data-type="mm" placeholder="0" oninput="calcTotals()"></td>
+      <td style="text-align:center;"><input type="number" min="0" data-class="${cls}" data-type="sm" placeholder="0" oninput="calcTotals()"></td>
+      <td style="text-align:center;"><input type="number" min="0" data-class="${cls}" data-type="sk" placeholder="0" oninput="calcTotals()"></td>
+      <td style="text-align:center;"><input type="number" min="0" data-class="${cls}" data-type="hi" placeholder="0" oninput="calcTotals()"></td>
+      <td class="total-cell" id="total_${cls}">0</td>
+    `;
+    tbody810.appendChild(tr);
+  });
+  calcTotals();
+}
+
+function getVal(inputs, cls, type) {
+  const el = [...inputs].find(i => +i.dataset.class === cls && i.dataset.type === type);
+  return el ? (+el.value || 0) : 0;
+}
+
+function calcTotals() {
+  const inputs = document.querySelectorAll('#tbody1to7 input, #tbody8to10 input');
+  let sumMM17=0, sumSM17=0;
+  CLASSES_LOW.forEach(cls => {
+    const mm = getVal(inputs, cls, 'mm');
+    const sm = getVal(inputs, cls, 'sm');
+    const t = mm + sm;
+    document.getElementById(`total_${cls}`).textContent = t;
+    sumMM17 += mm; sumSM17 += sm;
+  });
+  document.getElementById('subMM1to7').textContent = sumMM17;
+  document.getElementById('subSM1to7').textContent = sumSM17;
+  document.getElementById('subT1to7').textContent = sumMM17 + sumSM17;
+
+  let sumMM810=0, sumSM810=0, sumSK810=0, sumHI810=0;
+  CLASSES_HIGH.forEach(cls => {
+    const mm = getVal(inputs, cls, 'mm');
+    const sm = getVal(inputs, cls, 'sm');
+    const sk = getVal(inputs, cls, 'sk');
+    const hi = getVal(inputs, cls, 'hi');
+    const t = mm + sm; // Total = MM + SM only
+    document.getElementById(`total_${cls}`).textContent = t;
+    sumMM810 += mm; sumSM810 += sm; sumSK810 += sk; sumHI810 += hi;
+  });
+  document.getElementById('subMM8to10').textContent = sumMM810;
+  document.getElementById('subSM8to10').textContent = sumSM810;
+  document.getElementById('subSK8to10').textContent = sumSK810;
+  document.getElementById('subHI8to10').textContent = sumHI810;
+  document.getElementById('subT8to10').textContent = sumMM810 + sumSM810;
+
+  const grand = (sumMM17 + sumSM17) + (sumMM810 + sumSM810);
+  document.getElementById('grandTotalPapers').textContent = grand;
+
+  // Amount: each class uses its group's MM/SM rate
+  let totalAmount = 0;
+  [...CLASSES_LOW, ...CLASSES_HIGH].forEach(cls => {
+    const mm = getVal(inputs, cls, 'mm');
+    const sm = getVal(inputs, cls, 'sm');
+    totalAmount += mm * getRate(selectedExam, cls, 'mm');
+    totalAmount += sm * getRate(selectedExam, cls, 'sm');
+  });
+  document.getElementById('estimatedAmount').textContent = totalAmount.toLocaleString('en-IN');
+}
+
+function collectOrderData() {
+  const inputs = document.querySelectorAll('#tbody1to7 input, #tbody8to10 input');
+  const classes = {};
+  [...CLASSES_LOW, ...CLASSES_HIGH].forEach(cls => {
+    const mm = getVal(inputs, cls, 'mm');
+    const sm = getVal(inputs, cls, 'sm');
+    const sk = cls >= 8 ? getVal(inputs, cls, 'sk') : 0;
+    const hi = cls >= 8 ? getVal(inputs, cls, 'hi') : 0;
+    classes[cls] = { mm, sm, sk, hi, total: mm + sm };
+  });
+  return classes;
+}
+
+function submitOrder() {
+  const schoolName = document.getElementById('schoolName').value.trim();
+  const place = document.getElementById('schoolPlace').value.trim();
+  const headName = document.getElementById('headName').value.trim();
+  const mobile = document.getElementById('mobileNo').value.trim();
+
+  if (!schoolName || !place || !headName || !mobile) { toast('Please fill all school details.','error'); return; }
+  if (!/^\d{10}$/.test(mobile)) { toast('Enter valid 10-digit mobile number.','error'); return; }
+  if (!selectedExam) { toast('Please select an exam type.','error'); return; }
+
+  const data = getData();
+  // Duplicate check
+  const dup = data.orders.find(o => o.schoolName.toLowerCase() === schoolName.toLowerCase() && o.examType === selectedExam && o.year === currentYear);
+  if (dup) { toast(`${schoolName} has already placed an order for ${selectedExam} this year.`,'error'); return; }
+
+  const classData = collectOrderData();
+  let amount = 0;
+  Object.entries(classData).forEach(([cls, d]) => {
+    d.mmRate = getRate(selectedExam, +cls, 'mm');
+    d.smRate = getRate(selectedExam, +cls, 'sm');
+    d.classAmount = (d.mm * d.mmRate) + (d.sm * d.smRate);
+    amount += d.classAmount;
+  });
+  const totalPapers = Object.values(classData).reduce((s, c) => s + c.total, 0);
+
+  const order = {
+    id: Date.now().toString(),
+    schoolName, place, headName, mobile,
+    examType: selectedExam,
+    classData,
+    totalPapers, amount,
+    status: 'pending', payment: 'unpaid', billAllowed: false,
+    year: currentYear,
+    date: new Date().toLocaleDateString('en-IN')
+  };
+
+  data.orders.push(order);
+  saveData(data);
+  currentOrderId = order.id;
+
+  // Refresh admin stats if logged in
+  if (adminLoggedIn) { renderStats(); renderOrders(); }
+
+  // Show success
+  document.getElementById('orderFormView').style.display = 'none';
+  document.getElementById('orderSuccessView').style.display = 'block';
+  renderBillPreview(order);
+  toast('Order submitted successfully!','success');
+}
+
+function renderBillPreview(order) {
+  const hasHigh = Object.keys(order.classData).some(c => +c >= 8);
+  const extraH = hasHigh ? '<th>Sanskrit</th><th>Hindi</th>' : '';
+  const rows = Object.entries(order.classData).map(([cls, d]) => {
+    if (!d.mm && !d.sm && !d.sk && !d.hi) return '';
+    return `<tr>
+      <td>Class ${cls}</td>
+      <td style="text-align:center;">${d.mm}<br><span style="font-size:10px;color:var(--saffron);">&#8377;${d.mmRate||0}</span></td>
+      <td style="text-align:center;">${d.sm}<br><span style="font-size:10px;color:var(--blue);">&#8377;${d.smRate||0}</span></td>
+      ${+cls >= 8 ? `<td style="text-align:center;">${d.sk||0}</td><td style="text-align:center;">${d.hi||0}</td>` : ''}
+      <td style="text-align:center;font-weight:700;">${d.total}</td>
+      <td style="text-align:center;font-weight:700;color:var(--blue);">&#8377;${(d.classAmount||0).toLocaleString('en-IN')}</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('billBody').innerHTML = `
+    <div class="bill-info-grid">
+      <div class="bill-info-item">&#127968; <strong>School:</strong> ${order.schoolName}</div>
+      <div class="bill-info-item">&#128205; <strong>Place:</strong> ${order.place}</div>
+      <div class="bill-info-item">&#128100; <strong>Head:</strong> ${order.headName}</div>
+      <div class="bill-info-item">&#128241; <strong>Mobile:</strong> ${order.mobile}</div>
+      <div class="bill-info-item">&#128203; <strong>Exam:</strong> ${order.examType}</div>
+      <div class="bill-info-item">&#128197; <strong>Date:</strong> ${order.date} | Year: ${order.year}</div>
+    </div>
+    <div class="order-table-wrapper" style="margin-top:14px;">
+      <table class="order-table">
+        <thead><tr><th>Class</th><th>MM (Rate)</th><th>SM (Rate)</th>${extraH}<th>Total</th><th>Amount</th></tr></thead>
+        <tbody>${rows}</tbody>
+        <tfoot><tr>
+          <td colspan="${hasHigh?5:3}" style="font-weight:700;">Grand Total</td>
+          <td style="text-align:center;font-weight:700;color:var(--green);">${order.totalPapers}</td>
+          <td style="text-align:center;font-weight:800;color:var(--blue);">&#8377;${order.amount.toLocaleString('en-IN')}</td>
+        </tr></tfoot>
+      </table>
+    </div>
+    <div class="bill-total-box">
+      <div class="label">Total Amount</div>
+      <div class="amount">&#8377;${order.amount.toLocaleString('en-IN')}</div>
+      <div style="font-size:13px;color:var(--dark-gray);margin-top:4px;font-style:italic;">
+        <strong>Rupees:</strong> ${numberToWords(order.amount)}
+      </div>
+      <div style="font-size:12px;color:var(--mid-gray);margin-top:2px;">${order.totalPapers} total papers</div>
+    </div>
+    <div style="margin-top:24px;text-align:right;padding:16px 0 4px 0;border-top:2px dashed var(--light-gray);">
+      <div style="font-size:13px;color:var(--mid-gray);margin-bottom:40px;">Authorized Signature</div>
+      <div style="font-size:16px;font-weight:800;color:var(--navy);">🖨️ Jijau Offset &amp; Printers</div>
+      <div style="font-size:12px;color:var(--mid-gray);margin-top:2px;">Stamp &amp; Signature</div>
+    </div>
+    <div class="no-print" style="text-align:center;margin-top:20px;" id="billDownloadBtnInner">
+      <button class="btn btn-success" style="font-size:16px;padding:14px 36px;gap:10px;" onclick="downloadBill()">
+        ⬇️ Download Bill (PDF)
+      </button>
+    </div>
+  `;
+  document.getElementById('billPreview').style.display = 'block';
+}
+
+function downloadBill() {
+  const html = document.getElementById('billPreview').innerHTML;
+  printBillContent(html);
+}
+
+function printBillContent(htmlContent) {
+  const tmp = document.createElement('div');
+  tmp.innerHTML = htmlContent;
+  tmp.querySelectorAll('.no-print').forEach(el => el.remove());
+  const cleanHtml = tmp.innerHTML;
+
+  const fullHtml = `<!DOCTYPE html><html><head>
+    <meta charset="UTF-8">
+    <title>Jijau Offset & Printers – Bill</title>
+    <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;700;800&family=Noto+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+      *{margin:0;padding:0;box-sizing:border-box;}
+      body{font-family:'Noto Sans',sans-serif;background:#fff;color:#37474F;padding:8px;}
+      .bill-container{max-width:100%;margin:0 auto;border:1.5px solid #ECEFF1;border-radius:10px;overflow:hidden;}
+      .bill-header{background:linear-gradient(135deg,#0D1B3E,#1A237E);color:#fff;padding:10px 16px;text-align:center;}
+      .bill-header h2{font-family:'Baloo 2',sans-serif;font-size:18px;font-weight:800;color:#fff;letter-spacing:0.5px;}
+      .bill-header p{font-size:11px;color:rgba(255,255,255,0.85);margin-top:2px;}
+      .bill-body{padding:10px 14px;}
+      .bill-info-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;margin-bottom:8px;font-size:11px;}
+      .bill-info-item strong{color:#0D1B3E;}
+      .status-badge{font-size:10px;padding:2px 7px;border-radius:20px;display:inline-block;border:1px solid;}
+      .status-approved{background:#E8F5E9;color:#1B5E20;border-color:#66BB6A;}
+      .status-pending{background:#FFF8E1;color:#E65100;border-color:#FFA726;}
+      .status-paid{background:#E3F2FD;color:#0D47A1;border-color:#42A5F5;}
+      .order-table-wrapper{border-radius:7px;border:1px solid #ECEFF1;overflow:hidden;margin-top:6px;}
+      .order-table{width:100%;border-collapse:collapse;font-size:11px;}
+      .order-table th{background:linear-gradient(135deg,#0D1B3E,#1A237E);color:#fff;padding:6px 8px;text-align:left;}
+      .order-table td{padding:5px 8px;border-bottom:1px solid #ECEFF1;vertical-align:middle;}
+      .order-table tfoot td{font-weight:700;background:#F8F9FA;font-size:11px;padding:6px 8px;}
+      .bill-total-box{background:linear-gradient(135deg,#EAF7E8,#C8F5C0);border:1.5px solid #1DAD0A;border-radius:8px;padding:8px 14px;text-align:center;margin-top:8px;}
+      .bill-total-box .amount{font-family:'Baloo 2',sans-serif;font-size:22px;font-weight:800;color:#138808;}
+      .bill-total-box .label{font-size:11px;color:#37474F;font-weight:600;}
+      .bill-total-box .words{font-size:11px;color:#37474F;margin-top:2px;font-style:italic;}
+      .sig-block{margin-top:10px;text-align:right;padding:8px 0 2px;border-top:1.5px dashed #ECEFF1;font-size:11px;color:#90A4AE;}
+      .sig-name{font-size:13px;font-weight:800;color:#0D1B3E;margin-top:6px;}
+      .print-bar{text-align:center;padding:12px;background:#F8F9FA;border-top:1px solid #ECEFF1;}
+      .print-btn{background:#138808;color:white;border:none;padding:10px 32px;font-size:14px;font-weight:700;border-radius:8px;cursor:pointer;}
+      .print-btn:hover{background:#1DAD0A;}
+      @media print{
+        @page{size:A4 portrait;margin:8mm;}
+        .print-bar{display:none!important;}
+        body{padding:0;}
+      }
+    </style>
+  </head><body>
+    <div class="bill-container">${cleanHtml}</div>
+    <div class="print-bar">
+      <button class="print-btn" onclick="window.print()">🖨️ Print / Save as PDF</button>
+    </div>
+  </body></html>`;
+
+  const blob = new Blob([fullHtml], {type: 'text/html'});
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.target = '_blank'; a.rel = 'noopener';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 30000);
+}
+function numberToWords(n) {
+  if (n === 0) return 'Zero';
+  const ones = ['','One','Two','Three','Four','Five','Six','Seven','Eight','Nine',
+    'Ten','Eleven','Twelve','Thirteen','Fourteen','Fifteen','Sixteen','Seventeen','Eighteen','Nineteen'];
+  const tens = ['','','Twenty','Thirty','Forty','Fifty','Sixty','Seventy','Eighty','Ninety'];
+  function words(num) {
+    if (num === 0) return '';
+    if (num < 20) return ones[num] + ' ';
+    if (num < 100) return tens[Math.floor(num/10)] + (num%10 ? ' ' + ones[num%10] : '') + ' ';
+    if (num < 1000) return ones[Math.floor(num/100)] + ' Hundred ' + words(num%100);
+    if (num < 100000) return words(Math.floor(num/1000)) + 'Thousand ' + words(num%1000);
+    if (num < 10000000) return words(Math.floor(num/100000)) + 'Lakh ' + words(num%100000);
+    return words(Math.floor(num/10000000)) + 'Crore ' + words(num%10000000);
+  }
+  return words(n).trim() + ' Only';
+}
+
+function schoolEditOrder() {
+  if (!currentOrderId) return;
+  const data = getData();
+  const o = data.orders.find(ord => ord.id === currentOrderId);
+  if (!o) { toast('Order not found.', 'error'); return; }
+  if (o.status === 'approved') {
+    toast('Order is already approved. Contact admin to edit.', 'error'); return;
+  }
+
+  // Restore form fields
+  document.getElementById('schoolName').value = o.schoolName;
+  document.getElementById('schoolPlace').value = o.place;
+  document.getElementById('headName').value = o.headName;
+  document.getElementById('mobileNo').value = o.mobile;
+
+  // Remove old order so re-submit doesn't trigger duplicate check
+  data.orders = data.orders.filter(ord => ord.id !== currentOrderId);
+  saveData(data);
+  currentOrderId = null;
+
+  // Show form first, then select exam + fill data
+  document.getElementById('orderSuccessView').style.display = 'none';
+  document.getElementById('orderFormView').style.display = 'block';
+
+  // Use selectExam to rebuild table, then fill values
+  selectExam(o.examType);
+  setTimeout(() => {
+    Object.entries(o.classData).forEach(([cls, d]) => {
+      const mmEl = document.querySelector(`input[data-class="${cls}"][data-type="mm"]`);
+      const smEl = document.querySelector(`input[data-class="${cls}"][data-type="sm"]`);
+      const skEl = document.querySelector(`input[data-class="${cls}"][data-type="sk"]`);
+      const hiEl = document.querySelector(`input[data-class="${cls}"][data-type="hi"]`);
+      if (mmEl) mmEl.value = d.mm || 0;
+      if (smEl) smEl.value = d.sm || 0;
+      if (skEl) skEl.value = d.sk || 0;
+      if (hiEl) hiEl.value = d.hi || 0;
+    });
+    calcTotals();
+  }, 150);
+
+  toast('Edit your order and re-submit.', 'info');
+}
+
+function schoolDeleteOrder() {
+  if (!currentOrderId) return;
+  const data = getData();
+  const o = data.orders.find(ord => ord.id === currentOrderId);
+  if (!o) { toast('Order not found.', 'error'); return; }
+  if (o.status === 'approved') {
+    toast('Order is already approved. Contact admin to delete.', 'error'); return;
+  }
+
+  document.getElementById('deleteModalMsg').textContent =
+    `"${o.schoolName} – ${o.examType}" ची order कायमची delete होईल.`;
+  document.getElementById('deleteConfirmBtn').onclick = function() {
+    const d = getData();
+    d.orders = d.orders.filter(ord => ord.id !== currentOrderId);
+    saveData(d);
+    currentOrderId = null;
+    closeModal('deleteModal');
+    resetSchoolForm();
+    toast('Order deleted.', 'info');
+  };
+  document.getElementById('deleteModal').classList.add('active');
+}
+
+function resetSchoolForm() {
+  document.getElementById('schoolName').value = '';
+  document.getElementById('schoolPlace').value = '';
+  document.getElementById('headName').value = '';
+  document.getElementById('mobileNo').value = '';
+  document.querySelectorAll('.exam-pill').forEach(p => p.classList.remove('selected'));
+  selectedExam = null;
+  document.getElementById('selectedExamDisplay').style.display = 'none';
+  document.getElementById('orderTableSection').style.display = 'none';
+  document.getElementById('orderFormView').style.display = 'block';
+  document.getElementById('orderSuccessView').style.display = 'none';
+}
+
+// ============================================================
+// ADMIN LOGIN
+// ============================================================
+function adminLogin() {
+  const user = document.getElementById('adminUser').value.trim();
+  const pass = document.getElementById('adminPass').value.trim();
+  if (user === ADMIN_USER && pass === ADMIN_PASS) {
+    adminLoggedIn = true;
+    document.getElementById('adminLoginView').style.display = 'none';
+    document.getElementById('adminDashboard').style.display = 'block';
+    document.getElementById('adminYearDisplay').textContent = currentYear;
+    renderStats();
+    renderOrders();
+    renderRateEditor();
+    toast('Welcome, Admin!','success');
+  } else {
+    toast('Invalid credentials.','error');
+  }
+}
+
+function adminLogout() {
+  adminLoggedIn = false;
+  document.getElementById('adminLoginView').style.display = 'block';
+  document.getElementById('adminDashboard').style.display = 'none';
+  document.getElementById('adminUser').value = '';
+  document.getElementById('adminPass').value = '';
+}
+
+// ============================================================
+// ADMIN SECTIONS
+// ============================================================
+function showAdminSection(sec) {
+  document.querySelectorAll('.admin-section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.admin-nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(`admin-${sec}`).classList.add('active');
+  event.target.classList.add('active');
+}
+
+// ============================================================
+// STATS
+// ============================================================
+function renderStats() {
+  const data = getYearData(currentYear); // always fresh read
+  const total = data.orders.length;
+  const approved = data.orders.filter(o => o.status === 'approved').length;
+  const paid = data.orders.filter(o => o.payment === 'paid').length;
+  const revenue = data.orders.filter(o => o.payment === 'paid').reduce((s, o) => s + o.amount, 0);
+  document.getElementById('statsGrid').innerHTML = `
+    <div class="stat-card orange"><div class="stat-icon">📋</div><div class="stat-number">${total}</div><div class="stat-label">Total Orders</div></div>
+    <div class="stat-card green"><div class="stat-icon">✅</div><div class="stat-number">${approved}</div><div class="stat-label">Approved</div></div>
+    <div class="stat-card blue"><div class="stat-icon">💳</div><div class="stat-number">${paid}</div><div class="stat-label">Paid</div></div>
+    <div class="stat-card purple"><div class="stat-icon">₹</div><div class="stat-number">${revenue > 999 ? (revenue/1000).toFixed(1)+'K' : revenue}</div><div class="stat-label">Revenue Collected</div></div>
+  `;
+}
+
+// ============================================================
+// ORDERS TABLE
+// ============================================================
+function renderOrders() {
+  const data = getData();
+  let orders = data.orders;
+  
+  const search = document.getElementById('searchSchool')?.value?.toLowerCase() || '';
+  const filterExam = document.getElementById('filterExam')?.value || '';
+  const filterStatus = document.getElementById('filterStatus')?.value || '';
+  
+  if (search) orders = orders.filter(o => o.schoolName.toLowerCase().includes(search) || o.place.toLowerCase().includes(search));
+  if (filterExam) orders = orders.filter(o => o.examType === filterExam);
+  if (filterStatus) orders = orders.filter(o => {
+    if (filterStatus === 'paid') return o.payment === 'paid';
+    if (filterStatus === 'approved') return o.status === 'approved' && o.payment !== 'paid';
+    return o.status === 'pending';
+  });
+
+  const tbody = document.getElementById('adminOrdersBody');
+  if (!orders.length) {
+    tbody.innerHTML = '<tr><td colspan="10"><div class="empty-state"><div class="icon">📭</div><p>No orders found.</p></div></td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = orders.map((o, i) => `
+    <tr>
+      <td>${i+1}</td>
+      <td><strong>${o.schoolName}</strong></td>
+      <td>${o.place}</td>
+      <td><span style="font-size:12px;background:var(--blue-pale);color:var(--blue);padding:3px 8px;border-radius:6px;font-weight:600;">${o.examType}</span></td>
+      <td style="text-align:center;font-weight:700;">${o.totalPapers}</td>
+      <td style="text-align:center;font-weight:700;color:var(--green);">₹${o.amount.toLocaleString('en-IN')}</td>
+      <td>${statusBadge(o.status)}</td>
+      <td>${paymentBadge(o.payment)}</td>
+      <td style="font-size:12px;">${o.date}</td>
+      <td>
+        <div class="action-btns">
+          <button class="btn btn-sm btn-blue" onclick="viewOrder('${o.id}')">👁️</button>
+          <button class="btn btn-sm btn-outline" onclick="editOrder('${o.id}')">✏️</button>
+          ${o.status !== 'approved' ? `<button class="btn btn-sm btn-success" onclick="approveOrder('${o.id}')">✅ Approve</button>` : ''}
+          ${o.status === 'approved' && o.payment !== 'paid' ? `<button class="btn btn-sm btn-purple" onclick="markPaid('${o.id}')">💳 Mark Paid</button>` : ''}
+          ${o.payment === 'paid' && !o.billAllowed ? `<button class="btn btn-sm btn-teal" onclick="allowBill('${o.id}')">📄 Allow Bill</button>` : ''}
+          ${o.billAllowed ? `<button class="btn btn-sm btn-teal" onclick="viewCombinedBill('${encodeURIComponent(o.schoolName)}')">🏫 Combined Bill</button>` : ''}
+          <button class="btn btn-sm btn-danger" data-id="${o.id}" onclick="deleteOrder(this.dataset.id)">🗑️ Delete</button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function statusBadge(s) {
+  if (s === 'approved') return `<span class="status-badge status-approved">✅ Approved</span>`;
+  return `<span class="status-badge status-pending">⏳ Pending</span>`;
+}
+function paymentBadge(p) {
+  if (p === 'paid') return `<span class="status-badge status-paid">💳 Paid</span>`;
+  return `<span class="status-badge status-pending">⏳ Unpaid</span>`;
+}
+
+function approveOrder(id) {
+  const data = getData();
+  const o = data.orders.find(o => o.id === id);
+  if (o) { o.status = 'approved'; saveData(data); renderOrders(); renderStats(); toast('Order approved!','success'); }
+}
+
+function markPaid(id) {
+  const data = getData();
+  const o = data.orders.find(o => o.id === id);
+  if (o) { o.payment = 'paid'; saveData(data); renderOrders(); renderStats(); toast('Marked as paid!','success'); }
+}
+
+function allowBill(id) {
+  const data = getData();
+  const o = data.orders.find(o => o.id === id);
+  if (o) { o.billAllowed = true; saveData(data); renderOrders(); toast('Bill download allowed!','success'); }
+}
+
+function viewCombinedBill(encodedName) {
+  const schoolName = decodeURIComponent(encodedName);
+  const data = getData();
+  const orders = data.orders.filter(o =>
+    o.schoolName.toLowerCase() === schoolName.toLowerCase() &&
+    o.year === currentYear &&
+    o.billAllowed
+  );
+  if (!orders.length) { toast('No allowed bills found for this school.', 'error'); return; }
+
+  const first = orders[0];
+  let grandTotal = 0;
+  let grandPapers = 0;
+
+  const examSections = orders.map(o => {
+    const hasHigh = Object.keys(o.classData).some(c => +c >= 8);
+    const extraH = hasHigh ? '<th>Sanskrit</th><th>Hindi</th>' : '';
+    const rows = Object.entries(o.classData).map(([cls, d]) => {
+      if (!d.mm && !d.sm && !d.sk && !d.hi) return '';
+      return `<tr>
+        <td>Class ${cls}</td>
+        <td style="text-align:center;">${d.mm}<br><span style="font-size:10px;color:#FF6B00;">₹${d.mmRate||0}</span></td>
+        <td style="text-align:center;">${d.sm}<br><span style="font-size:10px;color:#1565C0;">₹${d.smRate||0}</span></td>
+        ${+cls >= 8 ? `<td style="text-align:center;">${d.sk||0}</td><td style="text-align:center;">${d.hi||0}</td>` : ''}
+        <td style="text-align:center;font-weight:700;">${d.total}</td>
+        <td style="text-align:center;font-weight:700;color:#1565C0;">₹${(d.classAmount||0).toLocaleString('en-IN')}</td>
+      </tr>`;
+    }).join('');
+    grandTotal += o.amount;
+    grandPapers += o.totalPapers;
+    return `
+      <div style="margin-bottom:16px;">
+        <div style="background:linear-gradient(135deg,#0D1B3E,#1A237E);color:white;padding:8px 14px;border-radius:8px 8px 0 0;font-weight:700;font-size:13px;">
+          📝 ${o.examType} &nbsp;|&nbsp; ${o.totalPapers} papers &nbsp;|&nbsp; ₹${o.amount.toLocaleString('en-IN')}
+        </div>
+        <div class="order-table-wrapper" style="border-radius:0 0 8px 8px;border-top:none;">
+          <table class="order-table">
+            <thead><tr><th>Class</th><th>MM (Rate)</th><th>SM (Rate)</th>${extraH}<th>Total</th><th>Amount</th></tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
+      </div>`;
+  }).join('');
+
+  const html = `
+    <div class="bill-container" id="combinedBillPrint">
+      <div class="bill-header">
+        <h2>🖨️ Jijau Offset &amp; Printers</h2>
+        <p>Combined Exam Paper Supply Bill – ${currentYear}</p>
+      </div>
+      <div class="bill-body">
+        <div class="bill-info-grid">
+          <div class="bill-info-item">🏫 <strong>School:</strong> ${first.schoolName}</div>
+          <div class="bill-info-item">📍 <strong>Place:</strong> ${first.place}</div>
+          <div class="bill-info-item">👤 <strong>Head:</strong> ${first.headName}</div>
+          <div class="bill-info-item">📱 <strong>Mobile:</strong> ${first.mobile}</div>
+        </div>
+        <div style="margin:12px 0 8px;font-weight:700;color:#0D1B3E;font-size:14px;">Exam-wise Details:</div>
+        ${examSections}
+        <div class="bill-total-box">
+          <div class="label">Total Amount (All Exams)</div>
+          <div class="amount">₹${grandTotal.toLocaleString('en-IN')}</div>
+          <div style="font-size:13px;color:#37474F;margin-top:4px;font-style:italic;">
+            <strong>Rupees:</strong> ${numberToWords(grandTotal)}
+          </div>
+          <div style="font-size:12px;color:#90A4AE;margin-top:2px;">${grandPapers} total papers | ${orders.length} exam type(s)</div>
+        </div>
+        <div style="margin-top:16px;text-align:right;padding:12px 0 4px;border-top:2px dashed #ECEFF1;">
+          <div style="font-size:12px;color:#90A4AE;margin-bottom:36px;">Authorized Signature</div>
+          <div style="font-size:15px;font-weight:800;color:#0D1B3E;">🖨️ Jijau Offset &amp; Printers</div>
+          <div style="font-size:12px;color:#90A4AE;margin-top:2px;">Stamp &amp; Signature</div>
+        </div>
+        <div class="no-print" style="text-align:center;margin-top:16px;">
+          <button class="btn btn-success" style="font-size:15px;padding:12px 32px;" onclick="printBillContent(document.getElementById('combinedBillPrint').outerHTML)">
+            ⬇️ Download Combined Bill (PDF)
+          </button>
+        </div>
+      </div>
+    </div>`;
+
+  document.getElementById('combinedBillContent').innerHTML = html;
+  document.getElementById('combinedBillModal').classList.add('active');
+}
+
+function deleteOrder(id) {
+  const data = getData();
+  const o = data.orders.find(ord => ord.id === id);
+  if (!o) { toast('Order not found.', 'error'); return; }
+
+  // Show custom confirm modal
+  document.getElementById('deleteModalMsg').textContent =
+    `"${o.schoolName} – ${o.examType}" ची order कायमची delete होईल.`;
+
+  document.getElementById('deleteConfirmBtn').onclick = function() {
+    const d = getData();
+    d.orders = d.orders.filter(ord => ord.id !== id);
+    saveData(d);
+    closeModal('deleteModal');
+    renderOrders();
+    renderStats();
+    toast('Order deleted.', 'info');
+  };
+
+  document.getElementById('deleteModal').classList.add('active');
+}
+
+// ============================================================
+// VIEW ORDER MODAL
+// ============================================================
+function viewOrder(id) {
+  const data = getData();
+  const o = data.orders.find(o => o.id === id);
+  if (!o) return;
+  const hasHigh = Object.keys(o.classData).some(c => +c >= 8);
+  const extraH = hasHigh ? '<th>Sanskrit</th><th>Hindi</th>' : '';
+  const rows = Object.entries(o.classData).map(([cls, d]) => `
+    <tr>
+      <td>Class ${cls}</td>
+      <td style="text-align:center;">${d.mm}<br><span style="font-size:10px;color:var(--saffron);">&#8377;${d.mmRate||getRate(o.examType,+cls,'mm')}</span></td>
+      <td style="text-align:center;">${d.sm}<br><span style="font-size:10px;color:var(--blue);">&#8377;${d.smRate||getRate(o.examType,+cls,'sm')}</span></td>
+      ${+cls >= 8 ? `<td style="text-align:center;">${d.sk||0}</td><td style="text-align:center;">${d.hi||0}</td>` : ''}
+      <td style="text-align:center;font-weight:700;color:var(--green);">${d.total}</td>
+      <td style="text-align:center;font-weight:700;color:var(--blue);">&#8377;${(d.classAmount||0).toLocaleString('en-IN')}</td>
+    </tr>`).join('');
+
+  document.getElementById('viewModalContent').innerHTML = `
+    <div class="bill-container">
+      <div class="bill-header"><h2>&#128424; Jijau Offset &amp; Printers</h2><p>Order Details – ${o.year}</p></div>
+      <div class="bill-body">
+        <div class="bill-info-grid">
+          <div class="bill-info-item">&#127968; <strong>School:</strong> ${o.schoolName}</div>
+          <div class="bill-info-item">&#128205; <strong>Place:</strong> ${o.place}</div>
+          <div class="bill-info-item">&#128100; <strong>Head:</strong> ${o.headName}</div>
+          <div class="bill-info-item">&#128241; <strong>Mobile:</strong> ${o.mobile}</div>
+          <div class="bill-info-item">&#128203; <strong>Exam:</strong> ${o.examType}</div>
+          <div class="bill-info-item">&#128203; <strong>Status:</strong> ${statusBadge(o.status)} ${paymentBadge(o.payment)}</div>
+        </div>
+        <div class="order-table-wrapper" style="margin-top:14px;">
+          <table class="order-table">
+            <thead><tr><th>Class</th><th>MM (Rate)</th><th>SM (Rate)</th>${extraH}<th>Total</th><th>Amount</th></tr></thead>
+            <tbody>${rows}</tbody>
+            <tfoot><tr>
+              <td colspan="${hasHigh?5:3}">Grand Total</td>
+              <td style="text-align:center;font-weight:700;color:var(--green);">${o.totalPapers}</td>
+              <td style="text-align:center;font-weight:800;color:var(--blue);">&#8377;${o.amount.toLocaleString('en-IN')}</td>
+            </tr></tfoot>
+          </table>
+        </div>
+        <div class="bill-total-box" style="margin-top:14px;">
+          <div class="label">Total Amount</div>
+          <div class="amount">&#8377;${o.amount.toLocaleString('en-IN')}</div>
+          <div style="font-size:13px;color:var(--dark-gray);margin-top:4px;font-style:italic;">
+            <strong>Rupees:</strong> ${numberToWords(o.amount)}
+          </div>
+        </div>
+        <div style="margin-top:24px;text-align:right;padding:16px 0 4px 0;border-top:2px dashed var(--light-gray);">
+          <div style="font-size:13px;color:var(--mid-gray);margin-bottom:40px;">Authorized Signature</div>
+          <div style="font-size:16px;font-weight:800;color:var(--navy);">🖨️ Jijau Offset &amp; Printers</div>
+          <div style="font-size:12px;color:var(--mid-gray);margin-top:2px;">Stamp &amp; Signature</div>
+        </div>
+        <div class="no-print" style="text-align:center;margin-top:20px;">
+          <button class="btn btn-success" style="font-size:16px;padding:14px 36px;gap:10px;" onclick="printBillContent(document.querySelector('#viewModal .bill-container').outerHTML)">
+            ⬇️ Download Bill (PDF)
+          </button>
+        </div>
+      </div>
+    </div>`;
+  document.getElementById('viewModal').classList.add('active');
+}
+
+// ============================================================
+// EDIT ORDER MODAL
+// ============================================================
+function editOrder(id) {
+  const data = getData();
+  const o = data.orders.find(o => o.id === id);
+  if (!o) return;
+
+  const extraHeaders = Object.keys(o.classData).some(c => +c >= 8) ? '<th>Sanskrit</th><th>Hindi</th>' : '';
+  const rows = Object.entries(o.classData).map(([cls, d]) => {
+    const high = +cls >= 8;
+    return `
+      <tr>
+        <td>Class ${cls}</td>
+        <td style="text-align:center;"><input type="number" min="0" id="edit_mm_${cls}" value="${d.mm}" style="width:70px;border:1.5px solid #ddd;border-radius:6px;padding:5px;text-align:center;" oninput="calcEditTotals('${id}')"></td>
+        <td style="text-align:center;"><input type="number" min="0" id="edit_sm_${cls}" value="${d.sm}" style="width:70px;border:1.5px solid #ddd;border-radius:6px;padding:5px;text-align:center;" oninput="calcEditTotals('${id}')"></td>
+        ${high ? `<td style="text-align:center;"><input type="number" min="0" id="edit_sk_${cls}" value="${d.sk||0}" style="width:70px;border:1.5px solid #ddd;border-radius:6px;padding:5px;text-align:center;" oninput="calcEditTotals('${id}')"></td>
+        <td style="text-align:center;"><input type="number" min="0" id="edit_hi_${cls}" value="${d.hi||0}" style="width:70px;border:1.5px solid #ddd;border-radius:6px;padding:5px;text-align:center;" oninput="calcEditTotals('${id}')"></td>` : ''}
+        <td style="text-align:center;font-weight:700;color:var(--green);" id="edit_total_${cls}">${d.total}</td>
+      </tr>
+    `;
+  }).join('');
+
+  document.getElementById('editModalContent').innerHTML = `
+    <div class="form-grid" style="margin-bottom:16px;">
+      <div class="form-group"><label>School Name</label><input type="text" id="edit_schoolName" value="${o.schoolName}" class="form-control"></div>
+      <div class="form-group"><label>Place</label><input type="text" id="edit_place" value="${o.place}" class="form-control"></div>
+      <div class="form-group"><label>Head Name</label><input type="text" id="edit_headName" value="${o.headName}" class="form-control"></div>
+      <div class="form-group"><label>Mobile</label><input type="text" id="edit_mobile" value="${o.mobile}" class="form-control"></div>
+    </div>
+    <div class="order-table-wrapper">
+      <table class="order-table">
+        <thead><tr><th>Class</th><th>Marathi Medium</th><th>Semi Medium</th>${extraHeaders}<th>Total</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:16px;">
+      <div class="bill-total-box" style="flex:1;"><div class="label">Total Papers</div><div class="amount" id="editGrandTotal">${o.totalPapers}</div></div>
+      <div class="bill-total-box" style="flex:1;background:linear-gradient(135deg,#E3F2FD,#BBDEFB);border-color:var(--blue)"><div class="label">Amount</div><div class="amount" style="color:var(--blue)">₹<span id="editAmount">${o.amount.toLocaleString('en-IN')}</span></div></div>
+    </div>
+    <div style="margin-top:20px;display:flex;gap:12px;">
+      <button class="btn btn-primary" onclick="saveEditOrder('${id}')">💾 Save Changes</button>
+      <button class="btn btn-outline" onclick="closeModal('editModal')">Cancel</button>
+    </div>
+  `;
+  document.getElementById('editModal').classList.add('active');
+}
+
+function calcEditTotals(id) {
+  const data = getData();
+  const o = data.orders.find(o => o.id === id);
+  if (!o) return;
+  let grand=0, amt=0;
+  Object.keys(o.classData).forEach(cls => {
+    const mm = +document.getElementById(`edit_mm_${cls}`)?.value || 0;
+    const sm = +document.getElementById(`edit_sm_${cls}`)?.value || 0;
+    const t = mm + sm;
+    document.getElementById(`edit_total_${cls}`).textContent = t;
+    grand += t;
+    amt += mm * getRate(o.examType, +cls, 'mm') + sm * getRate(o.examType, +cls, 'sm');
+  });
+  document.getElementById('editGrandTotal').textContent = grand;
+  document.getElementById('editAmount').textContent = amt.toLocaleString('en-IN');
+}
+
+function saveEditOrder(id) {
+  const data = getData();
+  const o = data.orders.find(o => o.id === id);
+  if (!o) return;
+  o.schoolName = document.getElementById('edit_schoolName').value.trim() || o.schoolName;
+  o.place = document.getElementById('edit_place').value.trim() || o.place;
+  o.headName = document.getElementById('edit_headName').value.trim() || o.headName;
+  o.mobile = document.getElementById('edit_mobile').value.trim() || o.mobile;
+  let grand=0, amt=0;
+  Object.keys(o.classData).forEach(cls => {
+    const mm = +document.getElementById(`edit_mm_${cls}`)?.value || 0;
+    const sm = +document.getElementById(`edit_sm_${cls}`)?.value || 0;
+    const sk = +document.getElementById(`edit_sk_${cls}`)?.value || 0;
+    const hi = +document.getElementById(`edit_hi_${cls}`)?.value || 0;
+    const t = mm + sm;
+    const mmRate = getRate(o.examType, +cls, 'mm');
+    const smRate = getRate(o.examType, +cls, 'sm');
+    const classAmount = (mm * mmRate) + (sm * smRate);
+    o.classData[cls] = { mm, sm, sk, hi, total: t, mmRate, smRate, classAmount };
+    grand += t; amt += classAmount;
+  });
+  o.totalPapers = grand;
+  o.amount = amt;
+  saveData(data);
+  closeModal('editModal');
+  renderOrders();
+  renderStats();
+  toast('Order updated!','success');
+}
+
+// ============================================================
+// RATE EDITOR
+// ============================================================
+function renderRateEditor() {
+  const data = getData();
+  const r = (cat, grp, med) => {
+    const v = data.rates?.[cat]?.[grp]?.[med];
+    return v !== undefined ? v : (DEFAULT_RATES[cat]?.[grp]?.[med] ?? 0);
+  };
+
+  // Unit Test rows (4 groups)
+  const unitRows = CLASS_GROUPS.map((grp, i) => `
+    <tr>
+      ${i === 0 ? `<td rowspan="4" style="font-weight:700;color:var(--navy);vertical-align:middle;text-align:center;background:#FFF8F0;border-right:2px solid var(--saffron);">First &amp; Second<br>Unit Test</td>` : ''}
+      <td style="font-weight:600;">${grp.label}</td>
+      <td style="text-align:center;"><div style="display:flex;align-items:center;justify-content:center;gap:3px;"><span style="color:var(--green);font-weight:700;">&#8377;</span><input type="number" min="0" step="1" id="rate_unit_${grp.key}_mm" value="${r('unit',grp.key,'mm')}" style="width:60px;border:2px solid var(--saffron);border-radius:7px;padding:5px;text-align:center;font-size:15px;font-weight:800;color:var(--navy);"></div></td>
+      <td style="text-align:center;"><div style="display:flex;align-items:center;justify-content:center;gap:3px;"><span style="color:var(--green);font-weight:700;">&#8377;</span><input type="number" min="0" step="1" id="rate_unit_${grp.key}_sm" value="${r('unit',grp.key,'sm')}" style="width:60px;border:2px solid var(--blue);border-radius:7px;padding:5px;text-align:center;font-size:15px;font-weight:800;color:var(--navy);"></div></td>
+    </tr>`).join('');
+
+  // Term Exam rows (4 groups)
+  const termRows = CLASS_GROUPS.map((grp, i) => `
+    <tr>
+      ${i === 0 ? `<td rowspan="4" style="font-weight:700;color:var(--navy);vertical-align:middle;text-align:center;background:#F0F4FF;border-right:2px solid var(--blue);">First &amp; Second<br>Term Exam</td>` : ''}
+      <td style="font-weight:600;">${grp.label}</td>
+      <td style="text-align:center;"><div style="display:flex;align-items:center;justify-content:center;gap:3px;"><span style="color:var(--green);font-weight:700;">&#8377;</span><input type="number" min="0" step="1" id="rate_term_${grp.key}_mm" value="${r('term',grp.key,'mm')}" style="width:60px;border:2px solid var(--saffron);border-radius:7px;padding:5px;text-align:center;font-size:15px;font-weight:800;color:var(--navy);"></div></td>
+      <td style="text-align:center;"><div style="display:flex;align-items:center;justify-content:center;gap:3px;"><span style="color:var(--green);font-weight:700;">&#8377;</span><input type="number" min="0" step="1" id="rate_term_${grp.key}_sm" value="${r('term',grp.key,'sm')}" style="width:60px;border:2px solid var(--blue);border-radius:7px;padding:5px;text-align:center;font-size:15px;font-weight:800;color:var(--navy);"></div></td>
+    </tr>`).join('');
+
+  // Practice Exam — single row, Class 10 only
+  const practiceRow = `
+    <tr style="background:#F0FFF4;">
+      <td style="font-weight:700;color:var(--green);text-align:center;border-right:2px solid var(--green);">Class 10<br>Practice Exam</td>
+      <td style="font-weight:600;">Class 10</td>
+      <td style="text-align:center;"><div style="display:flex;align-items:center;justify-content:center;gap:3px;"><span style="color:var(--green);font-weight:700;">&#8377;</span><input type="number" min="0" step="1" id="rate_practice_g910_mm" value="${r('practice','g910','mm')}" style="width:60px;border:2px solid var(--saffron);border-radius:7px;padding:5px;text-align:center;font-size:15px;font-weight:800;color:var(--navy);"></div></td>
+      <td style="text-align:center;"><div style="display:flex;align-items:center;justify-content:center;gap:3px;"><span style="color:var(--green);font-weight:700;">&#8377;</span><input type="number" min="0" step="1" id="rate_practice_g910_sm" value="${r('practice','g910','sm')}" style="width:60px;border:2px solid var(--blue);border-radius:7px;padding:5px;text-align:center;font-size:15px;font-weight:800;color:var(--navy);"></div></td>
+    </tr>`;
+
+  document.getElementById('rateEditorGrid').innerHTML = `
+    <p style="font-size:13px;color:var(--mid-gray);margin-bottom:12px;">&#128204; Rates for Academic Year: <strong>${currentYear}</strong></p>
+    <div style="overflow-x:auto;">
+      <table style="width:100%;border-collapse:collapse;font-size:14px;border:2px solid var(--light-gray);border-radius:12px;overflow:hidden;">
+        <thead>
+          <tr style="background:linear-gradient(135deg,var(--navy),#1A237E);color:white;">
+            <th style="padding:13px 16px;text-align:center;">Exam Type</th>
+            <th style="padding:13px 16px;text-align:center;">Classes</th>
+            <th style="padding:13px 16px;text-align:center;">&#127754; Marathi Medium</th>
+            <th style="padding:13px 16px;text-align:center;">&#128218; Semi Medium</th>
+          </tr>
+        </thead>
+        <tbody style="--row-border:1px solid var(--light-gray);">
+          ${unitRows}
+          <tr><td colspan="4" style="height:6px;background:var(--light-gray);"></td></tr>
+          ${termRows}
+          <tr><td colspan="4" style="height:6px;background:var(--light-gray);"></td></tr>
+          ${practiceRow}
+        </tbody>
+      </table>
+    </div>`;
+
+  // Apply cell padding via JS
+  document.querySelectorAll('#rateEditorGrid tbody td').forEach(td => {
+    td.style.padding = '10px 14px';
+    td.style.borderBottom = '1px solid var(--light-gray)';
+    td.style.verticalAlign = 'middle';
+  });
+}
+
+function saveRates() {
+  const data = getData();
+  if (!data.rates) data.rates = {};
+
+  // Unit & Term — all 4 groups
+  ['unit', 'term'].forEach(cat => {
+    if (!data.rates[cat]) data.rates[cat] = {};
+    CLASS_GROUPS.forEach(grp => {
+      if (!data.rates[cat][grp.key]) data.rates[cat][grp.key] = {};
+      const mm = document.getElementById(`rate_${cat}_${grp.key}_mm`);
+      const sm = document.getElementById(`rate_${cat}_${grp.key}_sm`);
+      if (mm) data.rates[cat][grp.key].mm = +mm.value || 0;
+      if (sm) data.rates[cat][grp.key].sm = +sm.value || 0;
+    });
+  });
+
+  // Practice — only g910 (Class 10)
+  if (!data.rates.practice) data.rates.practice = {};
+  if (!data.rates.practice.g910) data.rates.practice.g910 = {};
+  const pmm = document.getElementById('rate_practice_g910_mm');
+  const psm = document.getElementById('rate_practice_g910_sm');
+  if (pmm) data.rates.practice.g910.mm = +pmm.value || 0;
+  if (psm) data.rates.practice.g910.sm = +psm.value || 0;
+
+  saveData(data);
+  toast('Rates saved successfully!', 'success');
+}
+
+// ============================================================
+// EXCEL EXPORT
+// ============================================================
+function exportExcel(singleExam) {
+  const data = getData();
+  const wb = XLSX.utils.book_new();
+  const examTypes = singleExam ? [singleExam] : EXAM_TYPES;
+
+  examTypes.forEach(examType => {
+    const orders = data.orders.filter(o => o.examType === examType);
+    const sheetName = examType.substring(0, 31);
+    const aoa = [];
+    const merges = [];
+    const R = () => aoa.length;
+
+    // ── Title row ──
+    aoa.push([examType,'','','','','','','','','','','','', currentYear]);
+    merges.push({ s:{r:0,c:0}, e:{r:0,c:12} });
+
+    aoa.push([]); // blank
+
+    // ── Header: अ.क्र. | शाळेचे नाव | मध्यम/एकूण | वर्ग 1..10 ──
+    const hRow1 = R();
+    aoa.push(['अ.क्र.', 'शाळेचे नाव', 'मध्यम / एकूण', 'वर्ग','','','','','','','','','']);
+    merges.push({ s:{r:hRow1,c:3}, e:{r:hRow1,c:12} });
+
+    aoa.push(['','','', '1','2','3','4','5','6','7','8','9','10']);
+
+    if (orders.length === 0) {
+      aoa.push(['-','(No orders)','एकूण', 0,0,0,0,0,0,0,0,0,0]);
+      aoa.push(['','','मराठी मध्यम', 0,0,0,0,0,0,0,0,0,0]);
+      aoa.push(['','','सेमी',        0,0,0,0,0,0,0,0,0,0]);
+    } else {
+      orders.forEach((o, idx) => {
+        const cd = o.classData;
+        const sr = R();
+        const v = (val) => val || '';  // blank instead of 0
+
+        aoa.push([idx+1, o.schoolName, 'एकूण',
+          v(cd[1]?.total), v(cd[2]?.total), v(cd[3]?.total), v(cd[4]?.total),
+          v(cd[5]?.total), v(cd[6]?.total), v(cd[7]?.total),
+          v(cd[8]?.total), v(cd[9]?.total), v(cd[10]?.total)
+        ]);
+        aoa.push(['','','मराठी मध्यम',
+          v(cd[1]?.mm), v(cd[2]?.mm), v(cd[3]?.mm), v(cd[4]?.mm),
+          v(cd[5]?.mm), v(cd[6]?.mm), v(cd[7]?.mm),
+          v(cd[8]?.mm), v(cd[9]?.mm), v(cd[10]?.mm)
+        ]);
+        aoa.push(['','','सेमी',
+          v(cd[1]?.sm), v(cd[2]?.sm), v(cd[3]?.sm), v(cd[4]?.sm),
+          v(cd[5]?.sm), v(cd[6]?.sm), v(cd[7]?.sm),
+          v(cd[8]?.sm), v(cd[9]?.sm), v(cd[10]?.sm)
+        ]);
+        aoa.push(['','','हिंदी',
+          '','','','','','','',
+          v(cd[8]?.hi), v(cd[9]?.hi), v(cd[10]?.hi)
+        ]);
+        aoa.push(['','','संस्कृत',
+          '','','','','','','',
+          v(cd[8]?.sk), v(cd[9]?.sk), v(cd[10]?.sk)
+        ]);
+
+        // Merge serial no and school name across 5 rows
+        merges.push({ s:{r:sr,c:0}, e:{r:sr+4,c:0} });
+        merges.push({ s:{r:sr,c:1}, e:{r:sr+4,c:1} });
+      });
+    }
+
+    // Build worksheet
+    const ws = XLSX.utils.aoa_to_sheet(aoa);
+    ws['!merges'] = merges;
+
+    // Apply white background to ALL cells
+    const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
+    for (let r = range.s.r; r <= range.e.r; r++) {
+      for (let c = range.s.c; c <= range.e.c; c++) {
+        const addr = XLSX.utils.encode_cell({r, c});
+        if (!ws[addr]) ws[addr] = {v:'', t:'s'};
+        ws[addr].s = ws[addr].s || {};
+        ws[addr].s.fill = { patternType:'solid', fgColor:{rgb:'FFFFFF'}, bgColor:{rgb:'FFFFFF'} };
+        ws[addr].s.alignment = { vertical:'center', wrapText: false };
+      }
+    }
+
+    // Title style
+    const tc = XLSX.utils.encode_cell({r:0,c:0});
+    const yc = XLSX.utils.encode_cell({r:0,c:13});
+    if (ws[tc]) ws[tc].s = { font:{bold:true,sz:13}, alignment:{horizontal:'center',vertical:'center'}, fill:{patternType:'solid',fgColor:{rgb:'FFFFFF'}} };
+    if (ws[yc]) ws[yc].s = { font:{bold:true,sz:12}, alignment:{horizontal:'center',vertical:'center'}, fill:{patternType:'solid',fgColor:{rgb:'FFFFFF'}} };
+
+    // Column widths
+    ws['!cols'] = [
+      {wch:6},  // अ.क्र.
+      {wch:26}, // शाळेचे नाव
+      {wch:16}, // मध्यम
+      {wch:6},{wch:6},{wch:6},{wch:6},{wch:6},{wch:6},{wch:6}, // cl 1-7
+      {wch:6},{wch:6},{wch:6}, // cl 8-10
+      {wch:10}  // year
+    ];
+
+    XLSX.utils.book_append_sheet(wb, ws, sheetName);
+  });
+
+  const filename = `Jijau_Orders_${singleExam ? singleExam.replace(/ /g,'_') : 'All'}_${currentYear}.xlsx`;
+  XLSX.writeFile(wb, filename);
+  toast('Excel downloaded!', 'success');
+}
+
+// ============================================================
+// MODAL HELPERS
+// ============================================================
+function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+window.addEventListener('click', e => {
+  if (e.target.classList.contains('modal-overlay')) e.target.classList.remove('active');
+});
+
+// ============================================================
+// INIT
+// ============================================================
+window.onload = async () => {
+  currentYear = document.getElementById('academicYearSelect').value;
+
+  // URL-based view routing
+  if (VIEW_MODE === 'school') {
+    document.querySelector('.tab-btn.admin').style.display = 'none';
+    document.querySelector('.tab-btn.school').click();
+  } else if (VIEW_MODE === 'admin') {
+    document.querySelector('.tab-btn.school').style.display = 'none';
+    switchTab('admin');
+  }
+
+  // Load from cloud
+  showLoader('Loading...');
+  try {
+    const d = await loadAndCache(currentYear);
+    if (!d.rates || !d.rates.unit) {
+      d.rates = JSON.parse(JSON.stringify(DEFAULT_RATES));
+      saveData(d);
+    }
+    hideLoader();
+
+    // Auto-refresh every 15s for admin
+    setInterval(async () => {
+      if (adminLoggedIn) {
+        await loadAndCache(currentYear);
+        renderStats(); renderOrders();
+      }
+    }, 15000);
+  } catch(e) {
+    hideLoader();
+    toast('Working offline.', 'info');
+  }
+};
+
+function showLoader(msg) {
+  let el = document.getElementById('cloudLoader');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'cloudLoader';
+    el.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(13,27,62,0.7);display:flex;align-items:center;justify-content:center;z-index:9999;';
+    el.innerHTML = `<div style="background:white;border-radius:16px;padding:32px 48px;text-align:center;box-shadow:0 8px 40px rgba(0,0,0,0.3);">
+      <div style="font-size:48px;margin-bottom:12px;">☁️</div>
+      <div style="font-size:16px;font-weight:700;color:#0D1B3E;" id="loaderMsg">${msg}</div>
+      <div style="margin-top:16px;width:200px;height:4px;background:#ECEFF1;border-radius:4px;overflow:hidden;">
+        <div style="height:100%;background:linear-gradient(90deg,#FF6B00,#138808);animation:loaderBar 1.5s ease-in-out infinite;border-radius:4px;"></div>
+      </div>
+    </div>`;
+    document.body.appendChild(el);
+  }
+  document.getElementById('loaderMsg').textContent = msg;
+  el.style.display = 'flex';
+}
+function hideLoader() {
+  const el = document.getElementById('cloudLoader');
+  if (el) el.style.display = 'none';
+}
+
+function showCloudSetup() {
+  const existing = document.getElementById('cloudSetupOverlay');
+  if (existing) existing.remove();
+
+  const overlay = document.createElement('div');
+  overlay.id = 'cloudSetupOverlay';
+  overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(13,27,62,0.85);display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px;';
+  overlay.innerHTML = `
+    <div style="background:white;border-radius:20px;padding:28px;max-width:460px;width:100%;box-shadow:0 8px 40px rgba(0,0,0,0.3);">
+      <div style="text-align:center;margin-bottom:20px;">
+        <div style="font-size:52px;">☁️</div>
+        <h2 style="font-family:'Baloo 2',sans-serif;font-size:22px;font-weight:800;color:#0D1B3E;margin-top:6px;">Cloud Setup</h2>
+        <p style="font-size:13px;color:#90A4AE;margin-top:4px;">एकदाच setup — मग WhatsApp वरून orders येतील</p>
+      </div>
+
+      <div style="background:#E8F5E9;border:2px solid #138808;border-radius:12px;padding:14px;margin-bottom:18px;font-size:12px;line-height:2;color:#1B5E20;">
+        <strong>📋 Steps (1 मिनिट):</strong><br>
+        1. <a href="https://www.npoint.io" target="_blank" style="color:#1565C0;font-weight:700;">npoint.io</a> वर जा<br>
+        2. <strong>"New JSON Bin"</strong> click करा<br>
+        3. Content delete करा → <code style="background:#fff;padding:2px 6px;border-radius:4px;">{"orders":[]}</code> paste करा<br>
+        4. <strong>Save</strong> → URL मधील ID copy करा<br>
+        &nbsp;&nbsp;&nbsp;(उदा: <code style="background:#fff;padding:2px 6px;border-radius:4px;">https://www.npoint.io/docs/<strong>abc123xyz</strong></code>)
+      </div>
+
+      <div style="margin-bottom:16px;">
+        <label style="font-size:13px;font-weight:700;color:#0D1B3E;display:block;margin-bottom:6px;">🔑 npoint.io Endpoint ID</label>
+        <input type="text" id="setupEndpointId" placeholder="उदा: abc123xyz456"
+          style="width:100%;border:2px solid #ECEFF1;border-radius:10px;padding:12px;font-size:14px;font-family:'Noto Sans',sans-serif;outline:none;"
+          value="${getEndpoint(currentYear)}"
+          onfocus="this.style.borderColor='#1565C0'" onblur="this.style.borderColor='#ECEFF1'">
+        <div style="font-size:11px;color:#90A4AE;margin-top:4px;">URL च्या शेवटचा code — numbers+letters</div>
+      </div>
+
+      <button onclick="doCloudConnect()"
+        style="width:100%;background:linear-gradient(135deg,#138808,#1DAD0A);color:white;border:none;border-radius:12px;padding:14px;font-size:15px;font-weight:700;cursor:pointer;font-family:'Noto Sans',sans-serif;margin-bottom:10px;">
+        ☁️ Connect & Save
+      </button>
+      <button onclick="useOfflineMode()"
+        style="width:100%;background:transparent;color:#90A4AE;border:1.5px solid #ECEFF1;border-radius:12px;padding:10px;font-size:13px;cursor:pointer;font-family:'Noto Sans',sans-serif;">
+        📴 Offline Mode (एकाच device वर)
+      </button>
+    </div>`;
+  document.body.appendChild(overlay);
+}
+
+async function doCloudConnect() {
+  const endpointId = document.getElementById('setupEndpointId').value.trim();
+  if (!endpointId) { alert('Endpoint ID आवश्यक आहे'); return; }
+
+  // Save endpoint
+  localStorage.setItem(getEndpointKey(currentYear), endpointId);
+
+  showLoader('Connecting...');
+
+  try {
+    const d = await loadAndCache(currentYear);
+    if (!d) throw new Error('No data');
+
+    if (!d.rates || !d.rates.unit) {
+      d.rates = JSON.parse(JSON.stringify(DEFAULT_RATES));
+      saveData(d);
+    }
+
+    document.getElementById('cloudSetupOverlay')?.remove();
+    hideLoader();
+    toast('☁️ Cloud connected!', 'success');
+
+    if (adminLoggedIn) { renderStats(); renderOrders(); renderRateEditor(); }
+
+    // Auto-refresh every 20s for admin
+    setInterval(async () => {
+      if (adminLoggedIn) {
+        await loadAndCache(currentYear);
+        renderStats(); renderOrders();
+      }
+    }, 20000);
+
+    showShareLinks();
+  } catch(e) {
+    hideLoader();
+    localStorage.removeItem(getEndpointKey(currentYear));
+    alert('❌ Connection failed!\n\nnpoint.io वर जाऊन Endpoint ID पुन्हा चेक करा.');
+  }
+}
+
+function useOfflineMode() {
+  localStorage.setItem('jijau_offline', '1');
+  document.getElementById('cloudSetupOverlay')?.remove();
+  const d = getData();
+  if (!d.rates || !d.rates.unit) { d.rates = JSON.parse(JSON.stringify(DEFAULT_RATES)); saveData(d); }
+  toast('Offline mode — single device only', 'info');
+}
+
+function showShareLinks() {
+  const base = window.location.href.split('?')[0];
+  const schoolLink = `${base}?view=school`;
+  const adminLink  = `${base}?view=admin`;
+
+  const modal = document.createElement('div');
+  modal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:9998;padding:20px;';
+  modal.innerHTML = `
+    <div style="background:white;border-radius:20px;padding:28px;max-width:480px;width:100%;">
+      <h2 style="font-family:'Baloo 2',sans-serif;color:#0D1B3E;margin-bottom:6px;">🎉 Cloud Ready!</h2>
+      <p style="font-size:13px;color:#90A4AE;margin-bottom:20px;">या links WhatsApp वर share करा</p>
+
+      <div style="background:#E3F0FF;border-radius:12px;padding:14px;margin-bottom:12px;">
+        <div style="font-size:12px;font-weight:700;color:#1565C0;margin-bottom:6px;">🏫 School Link (शाळांसाठी share करा)</div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <input readonly value="${schoolLink}" id="schoolLinkInput"
+            style="flex:1;border:1px solid #ECEFF1;border-radius:8px;padding:8px;font-size:11px;background:white;">
+          <button onclick="copyLink('schoolLinkInput')" style="background:#1565C0;color:white;border:none;border-radius:8px;padding:8px 12px;cursor:pointer;font-size:12px;">Copy</button>
+        </div>
+      </div>
+
+      <div style="background:#FFF8F0;border-radius:12px;padding:14px;margin-bottom:20px;">
+        <div style="font-size:12px;font-weight:700;color:#FF6B00;margin-bottom:6px;">🔐 Admin Link (फक्त तुमच्यासाठी)</div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <input readonly value="${adminLink}" id="adminLinkInput"
+            style="flex:1;border:1px solid #ECEFF1;border-radius:8px;padding:8px;font-size:11px;background:white;">
+          <button onclick="copyLink('adminLinkInput')" style="background:#FF6B00;color:white;border:none;border-radius:8px;padding:8px 12px;cursor:pointer;font-size:12px;">Copy</button>
+        </div>
+      </div>
+
+      <button onclick="this.parentElement.parentElement.remove()"
+        style="width:100%;background:linear-gradient(135deg,#0D1B3E,#1A237E);color:white;border:none;border-radius:12px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;">
+        ✅ Done
+      </button>
+    </div>`;
+  document.body.appendChild(modal);
+}
+
+function copyLink(inputId) {
+  const el = document.getElementById(inputId);
+  el.select(); el.setSelectionRange(0,9999);
+  navigator.clipboard.writeText(el.value).then(() => toast('Link copied!','success'));
+}
+
+// Share links button in admin header
+function showLinksModal() { showShareLinks(); }
+</script>
+</body>
+</html>
