@@ -1039,9 +1039,11 @@ async function cloudGet(year) {
 async function cloudSave(year, data) {
   try {
     const key = `jijau_${year.replace('-','_')}`;
-    await fetchWithTimeout(GAS_URL, {
+    // Use no-cors mode to avoid CORS issues from GitHub Pages
+    await fetch(GAS_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify({ key, value: data })
     });
     return true;
