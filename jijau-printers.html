@@ -1010,46 +1010,39 @@ let currentOrderId = null;
 const urlParams = new URLSearchParams(window.location.search);
 const VIEW_MODE = urlParams.get('view') || 'both';
 
-// ── Cloud helpers ────────────────────────────────────────────
-function getEndpointKey(year) {
-  return `jijau_endpoint_${year.replace('-','_')}`;
-}
+// ── Cloud helpers — Google Apps Script backend ──────────────
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbysQMEBj_mKieMvaJf8igpCElYNSjYCBLUUsJAfK9Ooa8SvatyKNTKJU9h9RcBdA-WM5w/exec';
 
-function getEndpoint(year) {
-  return localStorage.getItem(getEndpointKey(year)) || '';
-}
+function getEndpointKey(year) { return `jijau_gas_${year.replace('-','_')}`; }
+function getEndpoint(year) { return GAS_URL; } // always use GAS
 
-async function fetchWithTimeout(url, options = {}, ms = 8000) {
+async function fetchWithTimeout(url, options = {}, ms = 10000) {
   const controller = new AbortController();
   const id = setTimeout(() => controller.abort(), ms);
   try {
     const r = await fetch(url, { ...options, signal: controller.signal });
     clearTimeout(id);
     return r;
-  } catch(e) {
-    clearTimeout(id);
-    throw e;
-  }
+  } catch(e) { clearTimeout(id); throw e; }
 }
 
 async function cloudGet(year) {
-  const endpoint = getEndpoint(year);
-  if (!endpoint) return null;
   try {
-    const r = await fetchWithTimeout(`https://api.npoint.io/${endpoint}`);
-    if (!r.ok) return null;
-    return await r.json();
+    const key = `jijau_${year.replace('-','_')}`;
+    const r = await fetchWithTimeout(`${GAS_URL}?key=${key}`);
+    const text = await r.text();
+    if (!text || text === '{}') return null;
+    return JSON.parse(text);
   } catch(e) { return null; }
 }
 
 async function cloudSave(year, data) {
-  const endpoint = getEndpoint(year);
-  if (!endpoint) return false;
   try {
-    await fetchWithTimeout(`https://api.npoint.io/${endpoint}`, {
+    const key = `jijau_${year.replace('-','_')}`;
+    await fetchWithTimeout(GAS_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
+      body: JSON.stringify({ key, value: data })
     });
     return true;
   } catch(e) { return false; }
@@ -2213,32 +2206,6 @@ window.onload = async () => {
     switchTab('admin');
   }
 
-  // School view — check if endpoint in URL param
-  const urlEndpoint = urlParams.get('eid');
-  if (urlEndpoint) {
-    localStorage.setItem(getEndpointKey(currentYear), urlEndpoint);
-  }
-
-  // Check offline mode
-  if (localStorage.getItem('jijau_offline') === '1') {
-    const d = getData();
-    if (!d.rates || !d.rates.unit) { d.rates = JSON.parse(JSON.stringify(DEFAULT_RATES)); saveData(d); }
-    return;
-  }
-
-  // School view — if no endpoint, use offline silently (don't show setup)
-  const endpoint = getEndpoint(currentYear);
-  if (!endpoint) {
-    if (VIEW_MODE === 'school') {
-      // School doesn't need cloud setup — just use local
-      const d = getData();
-      if (!d.rates || !d.rates.unit) { d.rates = JSON.parse(JSON.stringify(DEFAULT_RATES)); saveData(d); }
-      return;
-    }
-    showCloudSetup();
-    return;
-  }
-
   // Load from cloud
   showLoader('Loading...');
   try {
@@ -2249,16 +2216,16 @@ window.onload = async () => {
     }
     hideLoader();
 
-    // Auto-refresh every 20s for admin
+    // Auto-refresh every 15s for admin
     setInterval(async () => {
       if (adminLoggedIn) {
         await loadAndCache(currentYear);
         renderStats(); renderOrders();
       }
-    }, 20000);
+    }, 15000);
   } catch(e) {
     hideLoader();
-    toast('Cloud unavailable. Working offline.', 'error');
+    toast('Working offline.', 'info');
   }
 };
 
@@ -2380,8 +2347,7 @@ function useOfflineMode() {
 
 function showShareLinks() {
   const base = window.location.href.split('?')[0];
-  const eid  = getEndpoint(currentYear);
-  const schoolLink = `${base}?view=school&eid=${eid}`;
+  const schoolLink = `${base}?view=school`;
   const adminLink  = `${base}?view=admin`;
 
   const modal = document.createElement('div');
