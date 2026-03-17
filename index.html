@@ -2100,198 +2100,87 @@ function saveRates() {
 // ============================================================
 function exportExcel(singleExam) {
   const data = getData();
-  const wb = XLSX.utils.book_new();
   const examTypes = singleExam ? [singleExam] : EXAM_TYPES;
 
-  const thinBorder = {
-    top:    { style: 'thin',   color: { rgb: '000000' } },
-    bottom: { style: 'thin',   color: { rgb: '000000' } },
-    left:   { style: 'thin',   color: { rgb: '000000' } },
-    right:  { style: 'thin',   color: { rgb: '000000' } },
-  };
-  const medBorder = {
-    top:    { style: 'medium', color: { rgb: '000000' } },
-    bottom: { style: 'medium', color: { rgb: '000000' } },
-    left:   { style: 'medium', color: { rgb: '000000' } },
-    right:  { style: 'medium', color: { rgb: '000000' } },
-  };
+  const rowColors = ['#FFE0B2','#C8E6C9','#BBDEFB','#FFF9C4','#E1BEE7'];
+  const rowLabels = ['एकूण','मराठी मध्यम','सेमी','हिंदी','संस्कृत'];
 
-  const sc = (ws, r, c, val, style) => {
-    const addr = XLSX.utils.encode_cell({r, c});
-    ws[addr] = { v: val === '' ? '' : val, t: typeof val === 'number' ? 'n' : 's', s: style };
-  };
+  let html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+<head><meta charset="UTF-8">
+<!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets>`;
 
-  // Colorful but print-friendly row background colors
-  const rowBgColors = [
-    { rgb: 'FFE0B2' }, // एकूण     — saffron/orange
-    { rgb: 'C8E6C9' }, // मराठी    — green
-    { rgb: 'BBDEFB' }, // सेमी     — blue
-    { rgb: 'FFF9C4' }, // हिंदी    — yellow
-    { rgb: 'E1BEE7' }, // संस्कृत  — purple
-  ];
+  examTypes.forEach(et => {
+    html += `<x:ExcelWorksheet><x:Name>${et.substring(0,31)}</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet>`;
+  });
+
+  html += `</x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->
+<style>
+  td { font-family: Arial Unicode MS, Arial, sans-serif; font-size: 11pt; border: 1px solid #000000; vertical-align: middle; }
+  .title { background:#0D1B3E; color:#ffffff; font-size:16pt; font-weight:bold; text-align:center; }
+  .year  { background:#FF6B00; color:#ffffff; font-size:16pt; font-weight:bold; text-align:center; }
+  .hdr   { background:#1A237E; color:#ffffff; font-weight:bold; text-align:center; }
+  .cls   { background:#FF6B00; color:#ffffff; font-weight:bold; text-align:center; }
+  .sr    { background:#283593; color:#ffffff; font-weight:bold; text-align:center; }
+  .num   { text-align:center; }
+  .tot   { font-weight:bold; text-align:center; }
+</style></head><body>`;
 
   examTypes.forEach(examType => {
     const orders = data.orders.filter(o => o.examType === examType);
-    const sheetName = examType.substring(0, 31);
-    const ws = {};
-    const merges = [];
-    let maxR = 0;
-
-    // ── ROW 0: Title row — Exam name (font 16) + Academic Year (inside file, same row) ──
-    for (let c = 0; c <= 12; c++) {
-      sc(ws, 0, c, c === 0 ? examType : '', {
-        fill: { patternType: 'solid', fgColor: { rgb: '0D1B3E' } },
-        font: { bold: true, sz: 16, color: { rgb: 'FFFFFF' } },
-        alignment: { horizontal: 'center', vertical: 'center' },
-        border: medBorder
-      });
-    }
-    // शैक्षणिक वर्ष — title row मध्येच col 13, file च्या आत
-    sc(ws, 0, 13, currentYear, {
-      fill: { patternType: 'solid', fgColor: { rgb: 'FF6B00' } },
-      font: { bold: true, sz: 16, color: { rgb: 'FFFFFF' } },
-      alignment: { horizontal: 'center', vertical: 'center' },
-      border: medBorder
-    });
-    merges.push({ s:{r:0,c:0}, e:{r:0,c:12} });
-    maxR = 0;
-
-    // ── ROW 1: Header labels ──
-    const hdrS = {
-      fill: { patternType: 'solid', fgColor: { rgb: '1A237E' } },
-      font: { bold: true, sz: 11, color: { rgb: 'FFFFFF' } },
-      alignment: { horizontal: 'center', vertical: 'center' },
-      border: medBorder
-    };
-    sc(ws, 1, 0, 'अ.क्र.',       hdrS);
-    sc(ws, 1, 1, 'शाळेचे नाव',   hdrS);
-    sc(ws, 1, 2, 'मध्यम / एकूण', hdrS);
-    sc(ws, 1, 3, 'वर्ग',          hdrS);
-    for (let c = 4; c <= 13; c++) sc(ws, 1, c, '', hdrS);
-    merges.push({ s:{r:1,c:0}, e:{r:2,c:0} });
-    merges.push({ s:{r:1,c:1}, e:{r:2,c:1} });
-    merges.push({ s:{r:1,c:2}, e:{r:2,c:2} });
-    merges.push({ s:{r:1,c:3}, e:{r:1,c:13} });
-
-    // ── ROW 2: Class numbers 1-10 (center + middle aligned) ──
-    const clsS = {
-      fill: { patternType: 'solid', fgColor: { rgb: 'FF6B00' } },
-      font: { bold: true, sz: 11, color: { rgb: 'FFFFFF' } },
-      alignment: { horizontal: 'center', vertical: 'center' },
-      border: medBorder
-    };
-    sc(ws, 2, 0, '', hdrS); sc(ws, 2, 1, '', hdrS); sc(ws, 2, 2, '', hdrS);
-    [1,2,3,4,5,6,7,8,9,10].forEach((cls, i) => sc(ws, 2, 3+i, cls, clsS));
-    sc(ws, 2, 13, 'एकूण', clsS);
-
-    // ── Data rows ──
     const v = (val) => (val !== undefined && val !== null && val !== 0 && val !== '') ? val : '';
 
-    if (orders.length > 0) {
-      const rowLabels = ['एकूण', 'मराठी मध्यम', 'सेमी', 'हिंदी', 'संस्कृत'];
+    html += `<table style="border-collapse:collapse">
+    <tr>
+      <td colspan="13" class="title" style="height:36pt">${examType}</td>
+      <td class="year">${currentYear}</td>
+    </tr>
+    <tr>
+      <td rowspan="2" class="hdr" style="width:40pt">अ.क्र.</td>
+      <td rowspan="2" class="hdr" style="width:160pt">शाळेचे नाव</td>
+      <td rowspan="2" class="hdr" style="width:90pt">मध्यम / एकूण</td>
+      <td colspan="10" class="hdr">वर्ग</td>
+      <td rowspan="2" class="hdr" style="width:50pt">एकूण</td>
+    </tr>
+    <tr>`;
+    for(let c=1;c<=10;c++) html += `<td class="cls" style="width:40pt">${c}</td>`;
+    html += `</tr>`;
 
+    if(orders.length > 0) {
       orders.forEach((o, idx) => {
         const cd = o.classData;
-        const sr = 3 + (idx * 5);
-
+        const bgNm = idx%2===0 ? '#FFFFFF' : '#EEF2FF';
         rowLabels.forEach((label, li) => {
-          const r = sr + li;
-          const bg = rowBgColors[li];
-
-          // अ.क्र. — center + middle, merged over 5 rows
-          sc(ws, r, 0, li === 0 ? idx+1 : '', {
-            fill: { patternType: 'solid', fgColor: { rgb: '283593' } },
-            font: { bold: true, sz: 11, color: { rgb: 'FFFFFF' } },
-            alignment: { horizontal: 'center', vertical: 'center' },
-            border: thinBorder
-          });
-
-          // शाळेचे नाव — LEFT align, merged over 5 rows, middle vertical
-          sc(ws, r, 1, li === 0 ? o.schoolName : '', {
-            fill: { patternType: 'solid', fgColor: idx%2===0 ? {rgb:'FFFFFF'} : {rgb:'EEF2FF'} },
-            font: { bold: true, sz: 11, color: { rgb: '0D1B3E' } },
-            alignment: { horizontal: 'left', vertical: 'center', wrapText: true },
-            border: thinBorder
-          });
-
-          // मध्यम label — left align
-          sc(ws, r, 2, label, {
-            fill: { patternType: 'solid', fgColor: bg },
-            font: { bold: li === 0, sz: 11, color: { rgb: '0D1B3E' } },
-            alignment: { horizontal: 'left', vertical: 'center' },
-            border: thinBorder
-          });
-
-          // वर्गनिहाय संख्या — CENTER + MIDDLE align
+          const bg = rowColors[li];
           const vals =
-            li === 0 ? [1,2,3,4,5,6,7,8,9,10].map(c => v(cd[c]?.total)) :
-            li === 1 ? [1,2,3,4,5,6,7,8,9,10].map(c => v(cd[c]?.mm)) :
-            li === 2 ? [1,2,3,4,5,6,7,8,9,10].map(c => v(cd[c]?.sm)) :
-            li === 3 ? ['','','','','','','', v(cd[8]?.hi), v(cd[9]?.hi), v(cd[10]?.hi)] :
-                       ['','','','','','','', v(cd[8]?.sk), v(cd[9]?.sk), v(cd[10]?.sk)];
+            li===0 ? [1,2,3,4,5,6,7,8,9,10].map(c=>v(cd[c]?.total)) :
+            li===1 ? [1,2,3,4,5,6,7,8,9,10].map(c=>v(cd[c]?.mm)) :
+            li===2 ? [1,2,3,4,5,6,7,8,9,10].map(c=>v(cd[c]?.sm)) :
+            li===3 ? ['','','','','','','',v(cd[8]?.hi),v(cd[9]?.hi),v(cd[10]?.hi)] :
+                     ['','','','','','','',v(cd[8]?.sk),v(cd[9]?.sk),v(cd[10]?.sk)];
+          const rowTotal = vals.reduce((s,val)=>s+(typeof val==='number'?val:(parseInt(val)||0)),0);
 
-          vals.forEach((val, ci) => {
-            sc(ws, r, 3+ci, val, {
-              fill: { patternType: 'solid', fgColor: bg },
-              font: { bold: li===0 && val!=='', sz: 11, color: { rgb: '0D1B3E' } },
-              alignment: { horizontal: 'center', vertical: 'center' },
-              border: thinBorder
-            });
+          html += `<tr style="height:18pt">`;
+          if(li===0) {
+            html += `<td rowspan="5" class="sr">${idx+1}</td>`;
+            html += `<td rowspan="5" style="background:${bgNm};font-weight:bold;text-align:left;vertical-align:middle;border:1px solid #000">${o.schoolName}</td>`;
+          }
+          html += `<td style="background:${bg};text-align:left;font-weight:${li===0?'bold':'normal'};border:1px solid #000">${label}</td>`;
+          vals.forEach(val => {
+            html += `<td class="num" style="background:${bg};border:1px solid #000">${val}</td>`;
           });
-
-          // एकूण column (col 13) — row total
-          const rowTotal = vals.reduce((s, val) => s + (typeof val === 'number' ? val : (parseInt(val)||0)), 0);
-          sc(ws, r, 13, rowTotal > 0 ? rowTotal : '', {
-            fill: { patternType: 'solid', fgColor: { rgb: li===0 ? 'FFE0B2' : bg.rgb ? bg : bg } },
-            font: { bold: true, sz: 11, color: { rgb: '0D1B3E' } },
-            alignment: { horizontal: 'center', vertical: 'center' },
-            border: thinBorder
-          });
-
-          if (r > maxR) maxR = r;
+          html += `<td class="tot" style="background:${bg};border:1px solid #000">${rowTotal>0?rowTotal:''}</td></tr>`;
         });
-
-        // Merge अ.क्र. and शाळेचे नाव over 5 rows
-        merges.push({ s:{r:sr,c:0}, e:{r:sr+4,c:0} });
-        merges.push({ s:{r:sr,c:1}, e:{r:sr+4,c:1} });
-
-        // Fill border for merged school name cells
-        for (let ri = sr+1; ri <= sr+4; ri++) {
-          sc(ws, ri, 0, '', {
-            fill: { patternType: 'solid', fgColor: { rgb: '283593' } },
-            border: thinBorder
-          });
-          sc(ws, ri, 1, '', {
-            fill: { patternType: 'solid', fgColor: idx%2===0 ? {rgb:'FFFFFF'} : {rgb:'EEF2FF'} },
-            border: thinBorder
-          });
-        }
       });
     } else {
-      maxR = 3;
+      html += `<tr><td colspan="14" style="text-align:center;padding:10pt">या exam साठी orders नाहीत</td></tr>`;
     }
-
-    ws['!ref'] = XLSX.utils.encode_range({ s:{r:0,c:0}, e:{r:maxR,c:13} });
-    ws['!merges'] = merges;
-    ws['!cols'] = [
-      {wch:6},  // अ.क्र.
-      {wch:30}, // शाळेचे नाव
-      {wch:16}, // मध्यम
-      {wch:7},{wch:7},{wch:7},{wch:7},{wch:7},
-      {wch:7},{wch:7},{wch:7},{wch:7},{wch:7},
-      {wch:8}   // एकूण
-    ];
-    ws['!rows'] = [{hpt:36},{hpt:24},{hpt:24}];
-
-    XLSX.utils.book_append_sheet(wb, ws, sheetName);
+    html += `</table><br><br>`;
   });
 
-  const filename = `Jijau_Orders_${singleExam ? singleExam.replace(/ /g,'_') : 'All'}_${currentYear}.xlsx`;
-  const wbout = XLSX.write(wb, {bookType:'xlsx', type:'binary', cellStyles:true});
-  const buf = new ArrayBuffer(wbout.length);
-  const u8 = new Uint8Array(buf);
-  for (let i = 0; i < wbout.length; i++) u8[i] = wbout.charCodeAt(i) & 0xFF;
-  const blob = new Blob([buf], {type:'application/octet-stream'});
+  html += `</body></html>`;
+
+  const filename = `Jijau_Orders_${singleExam ? singleExam.replace(/ /g,'_') : 'All'}_${currentYear}.xls`;
+  const blob = new Blob(['﻿'+html], {type:'application/vnd.ms-excel;charset=utf-8'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url; a.download = filename;
@@ -2300,8 +2189,6 @@ function exportExcel(singleExam) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
   toast('Excel downloaded!', 'success');
 }
-
-// OLD exportExcel stub removed
 // ============================================================
 // MODAL HELPERS
 // ============================================================
