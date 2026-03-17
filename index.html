@@ -2144,17 +2144,18 @@ function exportExcel(singleExam) {
 
     html += `<table style="border-collapse:collapse">
     <tr>
-      <td colspan="12" class="title" style="height:36pt">${examType}</td>
-      <td class="year">${currentYear}</td>
+      <td colspan="13" class="title" style="height:36pt">${examType}
+        <span style="float:right;background:#FF6B00;padding:2pt 10pt;border-radius:4pt">${currentYear}</span>
+      </td>
     </tr>
     <tr>
-      <td rowspan="2" class="hdr" style="width:40pt">अ.क्र.</td>
-      <td rowspan="2" class="hdr" style="width:160pt">शाळेचे नाव</td>
-      <td rowspan="2" class="hdr" style="width:90pt">मध्यम / एकूण</td>
+      <td rowspan="2" class="hdr" style="width:45pt">अ.क्र.</td>
+      <td rowspan="2" class="hdr" style="width:170pt">शाळेचे नाव</td>
+      <td rowspan="2" class="hdr" style="width:100pt">मध्यम / एकूण</td>
       <td colspan="10" class="hdr">वर्ग</td>
     </tr>
     <tr>`;
-    for(let c=1;c<=10;c++) html += `<td class="cls" style="width:40pt">${c}</td>`;
+    for(let c=1;c<=10;c++) html += `<td class="cls" style="width:50pt">${c}</td>`;
     html += `</tr>`;
 
     if(orders.length > 0) {
