@@ -2114,6 +2114,19 @@ function exportExcel(singleExam) {
   });
 
   html += `</x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->
+<!--[if gte mso 9]><xml>
+<x:ExcelWorkbook>
+  <x:ExcelWorksheets>
+    <x:ExcelWorksheet>
+      <x:WorksheetOptions>
+        <x:FitToPage/>
+        <x:FitWidth>1</x:FitWidth>
+        <x:FitHeight>0</x:FitHeight>
+      </x:WorksheetOptions>
+    </x:ExcelWorksheet>
+  </x:ExcelWorksheets>
+</x:ExcelWorkbook>
+</xml><![endif]-->
 <style>
   td { font-family: Arial Unicode MS, Arial, sans-serif; font-size: 11pt; border: 1px solid #000000; vertical-align: middle; }
   .title { background:#0D1B3E; color:#ffffff; font-size:16pt; font-weight:bold; text-align:center; }
@@ -2131,7 +2144,7 @@ function exportExcel(singleExam) {
 
     html += `<table style="border-collapse:collapse">
     <tr>
-      <td colspan="13" class="title" style="height:36pt">${examType}</td>
+      <td colspan="12" class="title" style="height:36pt">${examType}</td>
       <td class="year">${currentYear}</td>
     </tr>
     <tr>
@@ -2139,7 +2152,6 @@ function exportExcel(singleExam) {
       <td rowspan="2" class="hdr" style="width:160pt">शाळेचे नाव</td>
       <td rowspan="2" class="hdr" style="width:90pt">मध्यम / एकूण</td>
       <td colspan="10" class="hdr">वर्ग</td>
-      <td rowspan="2" class="hdr" style="width:50pt">एकूण</td>
     </tr>
     <tr>`;
     for(let c=1;c<=10;c++) html += `<td class="cls" style="width:40pt">${c}</td>`;
@@ -2157,8 +2169,6 @@ function exportExcel(singleExam) {
             li===2 ? [1,2,3,4,5,6,7,8,9,10].map(c=>v(cd[c]?.sm)) :
             li===3 ? ['','','','','','','',v(cd[8]?.hi),v(cd[9]?.hi),v(cd[10]?.hi)] :
                      ['','','','','','','',v(cd[8]?.sk),v(cd[9]?.sk),v(cd[10]?.sk)];
-          const rowTotal = vals.reduce((s,val)=>s+(typeof val==='number'?val:(parseInt(val)||0)),0);
-
           html += `<tr style="height:18pt">`;
           if(li===0) {
             html += `<td rowspan="5" class="sr">${idx+1}</td>`;
@@ -2168,11 +2178,11 @@ function exportExcel(singleExam) {
           vals.forEach(val => {
             html += `<td class="num" style="background:${bg};border:1px solid #000">${val}</td>`;
           });
-          html += `<td class="tot" style="background:${bg};border:1px solid #000">${rowTotal>0?rowTotal:''}</td></tr>`;
+          html += `</tr>`;
         });
       });
     } else {
-      html += `<tr><td colspan="14" style="text-align:center;padding:10pt">या exam साठी orders नाहीत</td></tr>`;
+      html += `<tr><td colspan="13" style="text-align:center;padding:10pt">या exam साठी orders नाहीत</td></tr>`;
     }
     html += `</table><br><br>`;
   });
