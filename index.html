@@ -687,7 +687,6 @@ if (typeof XLSX !== 'undefined' && !XLSX.writeFile) {
               <div style="font-size:13px;font-weight:600;color:rgba(255,255,255,0.85);letter-spacing:1px;">॥ श्री गजानन प्रसन्न ॥</div>
               <h2>🖨️ Jijau Offset & Printers</h2>
               <div style="font-size:12px;color:rgba(255,255,255,0.75);margin-top:2px;">📞 9226785857</div>
-              <div style="font-size:12px;color:rgba(255,255,255,0.75);margin-top:2px;">📞 9226785857</div>
               <p>Exam Paper Supply Bill</p>
             </div>
             <div class="bill-body" id="billBody"></div>
@@ -1391,7 +1390,7 @@ function renderBillPreview(order) {
   const hasHigh = Object.keys(order.classData).some(c => +c >= 8);
   const extraH = hasHigh ? '<th>Sanskrit</th><th>Hindi</th>' : '';
   const rows = Object.entries(order.classData).map(([cls, d]) => {
-   if (!d.mm && !d.sm && !d.sk && !d.hi && !d.total) return '';
+    if (!d.mm && !d.sm && !d.sk && !d.hi && !d.total) return '';
     return `<tr>
       <td>Class ${cls}</td>
       <td style="text-align:center;">${d.mm}<br><span style="font-size:10px;color:var(--saffron);">&#8377;${d.mmRate||0}</span></td>
@@ -1766,7 +1765,7 @@ function viewCombinedBill(encodedName) {
     const hasHigh = Object.keys(o.classData).some(c => +c >= 8);
     const extraH = hasHigh ? '<th>Sanskrit</th><th>Hindi</th>' : '';
     const rows = Object.entries(o.classData).map(([cls, d]) => {
-      if (!d.mm && !d.sm && !d.sk && !d.hi) return '';
+      if (!d.mm && !d.sm && !d.sk && !d.hi && !d.total) return '';
       return `<tr>
         <td>Class ${cls}</td>
         <td style="text-align:center;">${d.mm}<br><span style="font-size:10px;color:#FF6B00;">₹${d.mmRate||0}</span></td>
@@ -1795,10 +1794,9 @@ function viewCombinedBill(encodedName) {
   const html = `
     <div class="bill-container" id="combinedBillPrint">
       <div class="bill-header">
+        <div class="prasann">॥ श्री गजानन प्रसन्न ॥</div>
         <h2>🖨️ Jijau Offset &amp; Printers</h2>
-        <div style="font-size:13px;font-weight:600;color:rgba(255,255,255,0.85);letter-spacing:1px;">॥ श्री गजानन प्रसन्न ॥</div>
-        <div style="font-size:12px;color:rgba(255,255,255,0.75);margin-top:2px;">📞 9226785857</div>
-
+        <div class="mobile">📞 9226785857</div>
         <p>Combined Exam Paper Supply Bill – ${currentYear}</p>
       </div>
       <div class="bill-body">
@@ -1819,9 +1817,9 @@ function viewCombinedBill(encodedName) {
           <div style="font-size:12px;color:#90A4AE;margin-top:2px;">${grandPapers} total papers | ${orders.length} exam type(s)</div>
         </div>
         <div style="margin-top:16px;text-align:right;padding:12px 0 4px;border-top:2px dashed #ECEFF1;">
-          <div style="font-size:12px;color:#90A4AE;margin-bottom:36px;">Authorized Signature</div>
-          <img src="https://vgdeshmukh0.github.io/Gajanan-Deshmukh-/Sign.jpg" style="height:65px;max-width:160px;object-fit:contain;" />
-          <div style="font-size:15px;font-weight:800;color:#0D1B3E;">🖨️ Jijau Offset &amp; Printers</div>
+          <div style="font-size:12px;color:#90A4AE;margin-bottom:4px;">Authorized Signature</div>
+          <img src="https://vgdeshmukh0.github.io/Gajanan-Deshmukh-/Sign.jpg" class="sig-img" />
+          <div style="font-size:15px;font-weight:800;color:#0D1B3E;margin-top:4px;">🖨️ Jijau Offset &amp; Printers</div>
           <div style="font-size:12px;color:#90A4AE;margin-top:2px;">Stamp &amp; Signature</div>
         </div>
         <div class="no-print" style="text-align:center;margin-top:16px;">
