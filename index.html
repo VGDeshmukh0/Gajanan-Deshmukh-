@@ -643,7 +643,7 @@ if (typeof XLSX !== 'undefined' && !XLSX.writeFile) {
 
 <!-- ===== TABS ===== -->
 <div class="tabs-container">
-  <button class="tab-btn school active" onclick="switchTab('school')">
+  <button class="tab-btn school" onclick="switchTab('school')">
     <span class="tab-icon">🏫</span> School Login
   </button>
   <button class="tab-btn admin" onclick="switchTab('admin')">
@@ -655,7 +655,7 @@ if (typeof XLSX !== 'undefined' && !XLSX.writeFile) {
 <div class="main-content">
 
   <!-- ============================== SCHOOL TAB ============================== -->
-  <div class="tab-panel active" id="panel-school">
+  <div class="tab-panel" id="panel-school">
 
     <!-- ORDER SUBMITTED SUCCESS -->
     <div id="orderSuccessView" style="display:none;">
@@ -2360,15 +2360,16 @@ window.onload = async () => {
   // URL-based view routing
   if (VIEW_MODE === 'school') {
     document.querySelector('.tab-btn.admin').style.display = 'none';
-    switchTab('school');
+    document.getElementById('panel-school').classList.add('active');
+    document.querySelector('.tab-btn.school').classList.add('active');
   } else if (VIEW_MODE === 'admin') {
     document.querySelector('.tab-btn.school').style.display = 'none';
-    // school panel active class काढा, admin panel activate करा
-    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
     document.getElementById('panel-admin').classList.add('active');
-    const adminBtn = document.querySelector('.tab-btn.admin');
-    if (adminBtn) adminBtn.classList.add('active');
+    document.querySelector('.tab-btn.admin').classList.add('active');
+  } else {
+    // both tabs — default school active
+    document.getElementById('panel-school').classList.add('active');
+    document.querySelector('.tab-btn.school').classList.add('active');
   }
 
   // Load from cloud in background — UI stays fully interactive immediately
