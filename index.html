@@ -1436,9 +1436,14 @@ function renderBillPreview(order) {
       <div style="font-size:12px;color:var(--mid-gray);margin-top:2px;">Stamp &amp; Signature</div>
     </div>
     <div class="no-print" style="text-align:center;margin-top:20px;" id="billDownloadBtnInner">
-      <button class="btn btn-success" style="font-size:16px;padding:14px 36px;gap:10px;" onclick="downloadBill()">
-        ⬇️ Download Bill (PDF)
-      </button>
+      ${order.billAllowed
+        ? `<button class="btn btn-success" style="font-size:16px;padding:14px 36px;gap:10px;" onclick="downloadBill()">
+            ⬇️ Download Bill (PDF)
+           </button>`
+        : `<div class="rate-badge" style="margin:0 auto;display:inline-flex;background:linear-gradient(135deg,#FFF3E0,#FFE0B2);border-color:#FFA726;color:#E65100;">
+            ⏳ Admin ने Allow केल्यानंतरच PDF download करता येईल.
+           </div>`
+      }
     </div>
   `;
   document.getElementById('billPreview').style.display = 'block';
@@ -2281,6 +2286,15 @@ window.onload = async () => {
         renderStats(); renderOrders();
       }
     }, 15000);
+
+    // Auto-refresh every 10s for school — bill status check
+    setInterval(async () => {
+      if (!adminLoggedIn && currentOrderId) {
+        const freshData = await loadAndCache(currentYear);
+        const order = freshData?.orders?.find(o => o.id === currentOrderId);
+        if (order) renderBillPreview(order);
+      }
+    }, 10000);
   })();
 };
 
