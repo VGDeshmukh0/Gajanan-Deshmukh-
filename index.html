@@ -695,6 +695,29 @@ if (typeof XLSX !== 'undefined' && !XLSX.writeFile) {
       </div>
     </div>
 
+    <!-- FIND MY ORDER -->
+    <div class="card" id="findOrderSection">
+      <div class="card-header">
+        <div class="card-icon blue">🔍</div>
+        <div>
+          <div class="card-title">माझी Order शोधा</div>
+          <div class="card-subtitle">Mobile Number आणि School Name दोन्ही टाका</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;">
+        <div class="form-group" style="flex:1;min-width:200px;">
+          <label>📱 Mobile Number</label>
+          <input type="tel" class="form-control" id="findMobile" placeholder="10-digit mobile number" maxlength="10" onkeydown="if(event.key==='Enter')findMyOrder()">
+        </div>
+        <div class="form-group" style="flex:1;min-width:200px;">
+          <label>🏫 School Name</label>
+          <input type="text" class="form-control" id="findSchoolName" placeholder="School name टाका" onkeydown="if(event.key==='Enter')findMyOrder()">
+        </div>
+        <button class="btn btn-blue" style="margin-bottom:2px;" onclick="findMyOrder()">🔍 Order शोधा</button>
+      </div>
+      <div id="findOrderResult" style="margin-top:16px;"></div>
+    </div>
+
     <!-- ORDER FORM -->
     <div id="orderFormView">
       <!-- School Info -->
@@ -723,8 +746,12 @@ if (typeof XLSX !== 'undefined' && !XLSX.writeFile) {
             <label>Mobile Number <span class="req">*</span></label>
             <input type="tel" class="form-control" id="mobileNo" placeholder="10-digit mobile number" maxlength="10">
           </div>
+          <div class="form-group">
+            <label>🔐 Secret PIN <span class="req">*</span></label>
+            <input type="password" class="form-control" id="schoolPin" placeholder="4 अंकी PIN सेट करा" maxlength="4">
+            <span style="font-size:11px;color:var(--mid-gray);margin-top:2px;">हा PIN लक्षात ठेवा — order शोधताना लागेल</span>
+          </div>
         </div>
-      </div>
 
       <!-- Exam Type -->
       <div class="card">
@@ -1341,9 +1368,11 @@ function submitOrder() {
   const place = document.getElementById('schoolPlace').value.trim();
   const headName = document.getElementById('headName').value.trim();
   const mobile = document.getElementById('mobileNo').value.trim();
+  const pin = document.getElementById('schoolPin').value.trim();
 
   if (!schoolName || !place || !headName || !mobile) { toast('Please fill all school details.','error'); return; }
   if (!/^\d{10}$/.test(mobile)) { toast('Enter valid 10-digit mobile number.','error'); return; }
+  if (!/^\d{4}$/.test(pin)) { toast('4 अंकी Secret PIN टाका.','error'); return; }
   if (!selectedExam) { toast('Please select an exam type.','error'); return; }
 
   const data = getData();
@@ -1363,7 +1392,7 @@ function submitOrder() {
 
   const order = {
     id: Date.now().toString(),
-    schoolName, place, headName, mobile,
+    schoolName, place, headName, mobile, pin,
     examType: selectedExam,
     classData,
     totalPapers, amount,
@@ -1600,6 +1629,79 @@ function schoolDeleteOrder() {
     toast('Order deleted.', 'info');
   };
   document.getElementById('deleteModal').classList.add('active');
+}
+
+function findMyOrder() {
+  const mobile = document.getElementById('findMobile').value.trim();
+  const schoolName = document.getElementById('findSchoolName').value.trim();
+
+  if (!/^\d{10}$/.test(mobile)) {
+    toast('10 अंकी Mobile Number टाका.', 'error'); return;
+  }
+  if (!schoolName) {
+    toast('School Name टाका.', 'error'); return;
+  }
+
+  const data = getData();
+  const orders = data.orders.filter(o =>
+    o.mobile === mobile &&
+    o.schoolName.toLowerCase() === schoolName.toLowerCase() &&
+    o.year === currentYear
+  );
+
+  const resultDiv = document.getElementById('findOrderResult');
+  if (!orders.length) {
+    resultDiv.innerHTML = `
+      <div style="background:#FFF3E0;border:2px solid #FFA726;border-radius:12px;padding:16px;text-align:center;">
+        <div style="font-size:32px;margin-bottom:8px;">❌</div>
+        <div style="font-weight:700;color:#E65100;">Order सापडली नाही</div>
+        <div style="font-size:13px;color:#BF360C;margin-top:4px;">Mobile Number आणि School Name बरोबर आहे का ते तपासा.</div>
+      </div>`;
+    return;
+  }
+
+  resultDiv.innerHTML = orders.map(o => `
+    <div style="background:var(--off-white);border:2px solid var(--light-gray);border-radius:12px;padding:16px;margin-bottom:12px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+        <div>
+          <div style="font-family:'Baloo 2',sans-serif;font-size:16px;font-weight:800;color:var(--navy);">🏫 ${o.schoolName}</div>
+          <div style="font-size:13px;color:var(--mid-gray);margin-top:2px;">📝 ${o.examType} &nbsp;|&nbsp; 📅 ${o.date}</div>
+          <div style="margin-top:6px;display:flex;gap:8px;flex-wrap:wrap;">
+            ${o.status === 'approved'
+              ? `<span class="status-badge status-approved">✅ Approved</span>`
+              : `<span class="status-badge status-pending">⏳ Pending</span>`}
+            ${o.payment === 'paid'
+              ? `<span class="status-badge status-paid">💳 Paid</span>`
+              : `<span class="status-badge status-pending">⏳ Unpaid</span>`}
+            ${o.billAllowed
+              ? `<span class="status-badge status-approved">📄 Bill Ready</span>`
+              : ''}
+          </div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:20px;font-weight:800;color:var(--green);">₹${o.amount.toLocaleString('en-IN')}</div>
+          <div style="font-size:12px;color:var(--mid-gray);">${o.totalPapers} papers</div>
+          <button class="btn btn-blue btn-sm" style="margin-top:8px;" onclick="loadFoundOrder('${o.id}')">
+            📋 Order बघा
+          </button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function loadFoundOrder(id) {
+  const data = getData();
+  const o = data.orders.find(ord => ord.id === id);
+  if (!o) { toast('Order सापडली नाही.', 'error'); return; }
+
+  currentOrderId = o.id;
+  document.getElementById('findOrderResult').innerHTML = '';
+  document.getElementById('findMobile').value = '';
+  document.getElementById('orderFormView').style.display = 'none';
+  document.getElementById('orderSuccessView').style.display = 'block';
+  renderBillPreview(o);
+  toast(`${o.schoolName} ची order सापडली!`, 'success');
 }
 
 function resetSchoolForm() {
