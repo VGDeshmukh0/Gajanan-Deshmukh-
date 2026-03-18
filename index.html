@@ -651,6 +651,18 @@ if (typeof XLSX !== 'undefined' && !XLSX.writeFile) {
   </button>
 </div>
 
+<!-- Immediately set correct tab before page renders -->
+<script>
+(function() {
+  const p = new URLSearchParams(window.location.search).get('view') || 'school';
+  document.write('<style id="initTabStyle">'
+    + (p === 'admin'
+        ? '#panel-admin{display:block!important}#panel-school{display:none!important}'
+        : '#panel-school{display:block!important}#panel-admin{display:none!important}')
+    + '</style>');
+})();
+</script>
+
 <!-- ===== MAIN ===== -->
 <div class="main-content">
 
