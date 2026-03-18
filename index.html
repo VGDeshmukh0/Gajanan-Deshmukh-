@@ -1036,7 +1036,7 @@ const GAS_URL = 'https://script.google.com/macros/s/AKfycbysQMEBj_mKieMvaJf8igpC
 function getEndpointKey(year) { return `jijau_gas_${year.replace('-','_')}`; }
 function getEndpoint(year) { return GAS_URL; } // always use GAS
 
-async function fetchWithTimeout(url, options = {}, ms = 10000) {
+async function fetchWithTimeout(url, options = {}, ms = 5000) {
   const controller = new AbortController();
   const id = setTimeout(() => controller.abort(), ms);
   try {
@@ -1621,10 +1621,26 @@ function adminLogin() {
     document.getElementById('adminLoginView').style.display = 'none';
     document.getElementById('adminDashboard').style.display = 'block';
     document.getElementById('adminYearDisplay').textContent = currentYear;
-    renderStats();
-    renderOrders();
-    renderRateEditor();
-    toast('Welcome, Admin!','success');
+
+    // जुना cache clear करा आणि cloud मधून fresh data load करा
+    const yearKey = `jijau_cache_${currentYear.replace('-','_')}`;
+    localStorage.removeItem(yearKey);
+
+    showLoader('Loading latest data...');
+    loadAndCache(currentYear).then(() => {
+      hideLoader();
+      renderStats();
+      renderOrders();
+      renderRateEditor();
+      toast('Welcome, Admin!', 'success');
+    }).catch(() => {
+      hideLoader();
+      renderStats();
+      renderOrders();
+      renderRateEditor();
+      toast('Welcome, Admin! (offline mode)', 'info');
+    });
+
   } else {
     toast('Invalid credentials.','error');
   }
@@ -1873,7 +1889,12 @@ function viewOrder(id) {
 
   document.getElementById('viewModalContent').innerHTML = `
     <div class="bill-container">
-      <div class="bill-header"><h2>&#128424; Jijau Offset &amp; Printers</h2><p>Order Details – ${o.year}</p></div>
+      <div class="bill-header">
+        <div style="font-size:13px;font-weight:600;color:rgba(255,255,255,0.85);letter-spacing:1px;">॥ श्री गजानन प्रसन्न ॥</div>
+        <h2>🖨️ Jijau Offset &amp; Printers</h2>
+        <div style="font-size:12px;color:rgba(255,255,255,0.75);margin-top:2px;">📞 9226785857</div>
+        <p>Exam Paper Supply Bill</p>
+      </div>
       <div class="bill-body">
         <div class="bill-info-grid">
           <div class="bill-info-item">&#127968; <strong>School:</strong> ${o.schoolName}</div>
@@ -1881,14 +1902,15 @@ function viewOrder(id) {
           <div class="bill-info-item">&#128100; <strong>Head:</strong> ${o.headName}</div>
           <div class="bill-info-item">&#128241; <strong>Mobile:</strong> ${o.mobile}</div>
           <div class="bill-info-item">&#128203; <strong>Exam:</strong> ${o.examType}</div>
-          <div class="bill-info-item">&#128203; <strong>Status:</strong> ${statusBadge(o.status)} ${paymentBadge(o.payment)}</div>
+          <div class="bill-info-item">&#128197; <strong>Date:</strong> ${o.date} | Year: ${o.year}</div>
+          <div class="bill-info-item" style="grid-column:1/-1;">&#128203; <strong>Status:</strong> ${statusBadge(o.status)} ${paymentBadge(o.payment)}</div>
         </div>
         <div class="order-table-wrapper" style="margin-top:14px;">
           <table class="order-table">
             <thead><tr><th>Class</th><th>MM (Rate)</th><th>SM (Rate)</th>${extraH}<th>Total</th><th>Amount</th></tr></thead>
             <tbody>${rows}</tbody>
             <tfoot><tr>
-              <td colspan="${hasHigh?5:3}">Grand Total</td>
+              <td colspan="${hasHigh?5:3}" style="font-weight:700;">Grand Total</td>
               <td style="text-align:center;font-weight:700;color:var(--green);">${o.totalPapers}</td>
               <td style="text-align:center;font-weight:800;color:var(--blue);">&#8377;${o.amount.toLocaleString('en-IN')}</td>
             </tr></tfoot>
@@ -1900,10 +1922,12 @@ function viewOrder(id) {
           <div style="font-size:13px;color:var(--dark-gray);margin-top:4px;font-style:italic;">
             <strong>Rupees:</strong> ${numberToWords(o.amount)}
           </div>
+          <div style="font-size:12px;color:var(--mid-gray);margin-top:2px;">${o.totalPapers} total papers</div>
         </div>
         <div style="margin-top:24px;text-align:right;padding:16px 0 4px 0;border-top:2px dashed var(--light-gray);">
-          <div style="font-size:13px;color:var(--mid-gray);margin-bottom:40px;">Authorized Signature</div>
-          <div style="font-size:16px;font-weight:800;color:var(--navy);">🖨️ Jijau Offset &amp; Printers</div>
+          <div style="font-size:13px;color:var(--mid-gray);margin-bottom:4px;">Authorized Signature</div>
+          <img src="https://vgdeshmukh0.github.io/Gajanan-Deshmukh-/Sign.jpg" class="sig-img" style="height:65px;max-width:160px;object-fit:contain;display:block;margin-left:auto;" />
+          <div style="font-size:16px;font-weight:800;color:var(--navy);margin-top:4px;">🖨️ Jijau Offset &amp; Printers</div>
           <div style="font-size:12px;color:var(--mid-gray);margin-top:2px;">Stamp &amp; Signature</div>
         </div>
         <div class="no-print" style="text-align:center;margin-top:20px;">
@@ -2234,15 +2258,21 @@ window.onload = async () => {
     switchTab('admin');
   }
 
-  // Load from cloud
-  showLoader('Loading...');
-  try {
-    const d = await loadAndCache(currentYear);
-    if (!d.rates || !d.rates.unit) {
-      d.rates = JSON.parse(JSON.stringify(DEFAULT_RATES));
-      saveData(d);
+  // Load from cloud in background — UI stays fully interactive immediately
+  showLoader('☁️ Syncing data...');
+  (async () => {
+    try {
+      const d = await loadAndCache(currentYear);
+      if (!d.rates || !d.rates.unit) {
+        d.rates = JSON.parse(JSON.stringify(DEFAULT_RATES));
+        saveData(d);
+      }
+      if (adminLoggedIn) { renderStats(); renderOrders(); renderRateEditor(); }
+    } catch(e) {
+      toast('Working offline.', 'info');
+    } finally {
+      hideLoader();
     }
-    hideLoader();
 
     // Auto-refresh every 15s for admin
     setInterval(async () => {
@@ -2251,10 +2281,7 @@ window.onload = async () => {
         renderStats(); renderOrders();
       }
     }, 15000);
-  } catch(e) {
-    hideLoader();
-    toast('Working offline.', 'info');
-  }
+  })();
 };
 
 function showLoader(msg) {
@@ -2262,14 +2289,12 @@ function showLoader(msg) {
   if (!el) {
     el = document.createElement('div');
     el.id = 'cloudLoader';
-    el.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(13,27,62,0.7);display:flex;align-items:center;justify-content:center;z-index:9999;';
-    el.innerHTML = `<div style="background:white;border-radius:16px;padding:32px 48px;text-align:center;box-shadow:0 8px 40px rgba(0,0,0,0.3);">
-      <div style="font-size:48px;margin-bottom:12px;">☁️</div>
-      <div style="font-size:16px;font-weight:700;color:#0D1B3E;" id="loaderMsg">${msg}</div>
-      <div style="margin-top:16px;width:200px;height:4px;background:#ECEFF1;border-radius:4px;overflow:hidden;">
+    el.style.cssText = 'position:fixed;top:0;left:0;right:0;height:44px;background:rgba(13,27,62,0.92);display:flex;align-items:center;justify-content:center;gap:12px;z-index:9999;pointer-events:none;';
+    el.innerHTML = `
+      <div style="width:160px;height:4px;background:rgba(255,255,255,0.2);border-radius:4px;overflow:hidden;flex-shrink:0;">
         <div style="height:100%;background:linear-gradient(90deg,#FF6B00,#138808);animation:loaderBar 1.5s ease-in-out infinite;border-radius:4px;"></div>
       </div>
-    </div>`;
+      <div style="font-size:13px;font-weight:600;color:rgba(255,255,255,0.9);" id="loaderMsg">${msg}</div>`;
     document.body.appendChild(el);
   }
   document.getElementById('loaderMsg').textContent = msg;
