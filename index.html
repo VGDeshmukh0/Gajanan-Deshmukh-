@@ -1391,7 +1391,7 @@ function renderBillPreview(order) {
   const hasHigh = Object.keys(order.classData).some(c => +c >= 8);
   const extraH = hasHigh ? '<th>Sanskrit</th><th>Hindi</th>' : '';
   const rows = Object.entries(order.classData).map(([cls, d]) => {
-    if (!d.mm && !d.sm && !d.sk && !d.hi) return '';
+   if (!d.mm && !d.sm && !d.sk && !d.hi && !d.total) return '';
     return `<tr>
       <td>Class ${cls}</td>
       <td style="text-align:center;">${d.mm}<br><span style="font-size:10px;color:var(--saffron);">&#8377;${d.mmRate||0}</span></td>
