@@ -655,13 +655,18 @@ if (typeof XLSX !== 'undefined' && !XLSX.writeFile) {
 <script>
 (function() {
   const p = new URLSearchParams(window.location.search).get('view') || 'school';
-  document.write('<style id="initTabStyle">'
-    + (p === 'admin'
-        ? '#panel-admin{display:block!important}#panel-school{display:none!important}'
-        : '#panel-school{display:block!important}#panel-admin{display:none!important}')
-    + '</style>');
+  document.documentElement.setAttribute('data-view', p);
 })();
 </script>
+
+<style>
+  html[data-view="admin"] #panel-school { display: none !important; }
+  html[data-view="admin"] #panel-admin  { display: block !important; }
+  html[data-view="school"] #panel-admin  { display: none !important; }
+  html[data-view="school"] #panel-school { display: block !important; }
+  html[data-view="admin"] .tab-btn.school { display: none !important; }
+  html[data-view="school"] .tab-btn.admin  { display: none !important; }
+</style>
 
 <!-- ===== MAIN ===== -->
 <div class="main-content">
