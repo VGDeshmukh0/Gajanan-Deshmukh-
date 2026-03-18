@@ -654,7 +654,9 @@ if (typeof XLSX !== 'undefined' && !XLSX.writeFile) {
 <!-- Immediately set correct tab before page renders -->
 <script>
 (function() {
-  const p = new URLSearchParams(window.location.search).get('view') || 'school';
+  const hash = window.location.hash.replace('#','');
+  const search = new URLSearchParams(window.location.search).get('view');
+  const p = hash || search || 'school';
   document.documentElement.setAttribute('data-view', p);
 })();
 </script>
@@ -1070,9 +1072,10 @@ let selectedExam = null;
 let adminLoggedIn = false;
 let currentOrderId = null;
 
-// URL-based view: ?view=school or ?view=admin
+// URL-based view: ?view=school or ?view=admin or #school or #admin
 const urlParams = new URLSearchParams(window.location.search);
-const VIEW_MODE = urlParams.get('view') || 'both';
+const hashView = window.location.hash.replace('#','');
+const VIEW_MODE = hashView || urlParams.get('view') || 'both';
 
 // ── Cloud helpers — Google Apps Script backend ──────────────
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbysQMEBj_mKieMvaJf8igpCElYNSjYCBLUUsJAfK9Ooa8SvatyKNTKJU9h9RcBdA-WM5w/exec';
