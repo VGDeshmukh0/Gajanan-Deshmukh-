@@ -765,11 +765,6 @@ if (typeof XLSX !== 'undefined' && !XLSX.writeFile) {
             <label>Mobile Number <span class="req">*</span></label>
             <input type="tel" class="form-control" id="mobileNo" placeholder="10-digit mobile number" maxlength="10">
           </div>
-          <div class="form-group">
-            <label>🔐 Secret PIN <span class="req">*</span></label>
-            <input type="password" class="form-control" id="schoolPin" placeholder="4 अंकी PIN सेट करा" maxlength="4">
-            <span style="font-size:11px;color:var(--mid-gray);margin-top:2px;">हा PIN लक्षात ठेवा — order शोधताना लागेल</span>
-          </div>
         </div>
 
       <!-- Exam Type -->
@@ -886,7 +881,7 @@ if (typeof XLSX !== 'undefined' && !XLSX.writeFile) {
   <div class="tab-panel" id="panel-admin">
 
     <!-- ADMIN LOGIN FORM -->
-    <div id="adminLoginView">
+    <div id="adminLoginView" style="display:block;"">
       <div class="admin-login-box">
         <div class="admin-lock-icon">🔐</div>
         <h2>Admin Access</h2>
@@ -1389,11 +1384,9 @@ function submitOrder() {
   const place = document.getElementById('schoolPlace').value.trim();
   const headName = document.getElementById('headName').value.trim();
   const mobile = document.getElementById('mobileNo').value.trim();
-  const pin = document.getElementById('schoolPin').value.trim();
 
   if (!schoolName || !place || !headName || !mobile) { toast('Please fill all school details.','error'); return; }
   if (!/^\d{10}$/.test(mobile)) { toast('Enter valid 10-digit mobile number.','error'); return; }
-  if (!/^\d{4}$/.test(pin)) { toast('4 अंकी Secret PIN टाका.','error'); return; }
   if (!selectedExam) { toast('Please select an exam type.','error'); return; }
 
   const data = getData();
@@ -1413,7 +1406,7 @@ function submitOrder() {
 
   const order = {
     id: Date.now().toString(),
-    schoolName, place, headName, mobile, pin,
+    schoolName, place, headName, mobile,
     examType: selectedExam,
     classData,
     totalPapers, amount,
