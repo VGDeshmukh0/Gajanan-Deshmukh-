@@ -149,8 +149,8 @@ if (typeof XLSX !== 'undefined' && !XLSX.writeFile) {
 
   /* ===== MAIN CONTENT ===== */
   .main-content { max-width: 1200px; margin: 0 auto; padding: 24px 16px; }
-  .tab-panel { display: none; }
-  .tab-panel.active { display: block; }
+  .tab-panel { visibility: hidden; height: 0; overflow: hidden; }
+  .tab-panel.active { visibility: visible; height: auto; overflow: visible; display: block; }
 
   /* ===== CARDS ===== */
   .card {
@@ -657,18 +657,14 @@ if (typeof XLSX !== 'undefined' && !XLSX.writeFile) {
   const hash = window.location.hash.replace('#','');
   const search = new URLSearchParams(window.location.search).get('view');
   const p = hash || search || 'school';
-  document.documentElement.setAttribute('data-view', p);
+  // Write inline style directly
+  if (p === 'admin') {
+    document.write('<style>#panel-school{display:none!important}.tab-btn.school{display:none!important}#panel-admin{display:block!important}</style>');
+  } else {
+    document.write('<style>#panel-admin{display:none!important}.tab-btn.admin{display:none!important}#panel-school{display:block!important}</style>');
+  }
 })();
 </script>
-
-<style>
-  html[data-view="admin"] #panel-school { display: none !important; }
-  html[data-view="admin"] #panel-admin  { display: block !important; }
-  html[data-view="school"] #panel-admin  { display: none !important; }
-  html[data-view="school"] #panel-school { display: block !important; }
-  html[data-view="admin"] .tab-btn.school { display: none !important; }
-  html[data-view="school"] .tab-btn.admin  { display: none !important; }
-</style>
 
 <!-- ===== MAIN ===== -->
 <div class="main-content">
