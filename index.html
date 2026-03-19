@@ -149,8 +149,8 @@ if (typeof XLSX !== 'undefined' && !XLSX.writeFile) {
 
   /* ===== MAIN CONTENT ===== */
   .main-content { max-width: 1200px; margin: 0 auto; padding: 24px 16px; }
-  .tab-panel { visibility: hidden; height: 0; overflow: hidden; }
-  .tab-panel.active { visibility: visible; height: auto; overflow: visible; display: block; }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
 
   /* ===== CARDS ===== */
   .card {
@@ -653,17 +653,21 @@ if (typeof XLSX !== 'undefined' && !XLSX.writeFile) {
 
 <!-- Immediately set correct tab before page renders -->
 <script>
-(function() {
+document.addEventListener('DOMContentLoaded', function() {
   const hash = window.location.hash.replace('#','');
   const search = new URLSearchParams(window.location.search).get('view');
-  const p = hash || search || 'school';
-  // Write inline style directly
-  if (p === 'admin') {
-    document.write('<style>#panel-school{display:none!important}.tab-btn.school{display:none!important}#panel-admin{display:block!important}</style>');
-  } else {
-    document.write('<style>#panel-admin{display:none!important}.tab-btn.admin{display:none!important}#panel-school{display:block!important}</style>');
-  }
-})();
+  const view = hash || search || 'school';
+
+  // Hide all panels first
+  document.querySelectorAll('.tab-panel').forEach(p => p.style.display = 'none');
+  document.querySelectorAll('.tab-btn').forEach(b => b.style.display = 'none');
+
+  // Show correct panel
+  const panel = document.getElementById('panel-' + view);
+  const btn = document.querySelector('.tab-btn.' + view);
+  if (panel) panel.style.display = 'block';
+  if (btn) btn.style.display = 'flex';
+});
 </script>
 
 <!-- ===== MAIN ===== -->
@@ -2365,21 +2369,6 @@ window.addEventListener('click', e => {
 // ============================================================
 window.onload = async () => {
   currentYear = document.getElementById('academicYearSelect').value;
-
-  // URL-based view routing
-  if (VIEW_MODE === 'school') {
-    document.querySelector('.tab-btn.admin').style.display = 'none';
-    document.getElementById('panel-school').classList.add('active');
-    document.querySelector('.tab-btn.school').classList.add('active');
-  } else if (VIEW_MODE === 'admin') {
-    document.querySelector('.tab-btn.school').style.display = 'none';
-    document.getElementById('panel-admin').classList.add('active');
-    document.querySelector('.tab-btn.admin').classList.add('active');
-  } else {
-    // both tabs — default school active
-    document.getElementById('panel-school').classList.add('active');
-    document.querySelector('.tab-btn.school').classList.add('active');
-  }
 
   // Load from cloud in background — UI stays fully interactive immediately
   showLoader('☁️ Syncing data...');
