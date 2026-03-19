@@ -658,15 +658,22 @@ document.addEventListener('DOMContentLoaded', function() {
   const search = new URLSearchParams(window.location.search).get('view');
   const view = hash || search || 'school';
 
-  // Hide all panels first
-  document.querySelectorAll('.tab-panel').forEach(p => p.style.display = 'none');
-  document.querySelectorAll('.tab-btn').forEach(b => b.style.display = 'none');
+  var panelAdmin  = document.getElementById('panel-admin');
+  var panelSchool = document.getElementById('panel-school');
+  var btnAdmin    = document.querySelector('.tab-btn.admin');
+  var btnSchool   = document.querySelector('.tab-btn.school');
 
-  // Show correct panel
-  const panel = document.getElementById('panel-' + view);
-  const btn = document.querySelector('.tab-btn.' + view);
-  if (panel) panel.style.display = 'block';
-  if (btn) btn.style.display = 'flex';
+  if (view === 'admin') {
+    panelAdmin.style.setProperty('display', 'block', 'important');
+    panelSchool.style.setProperty('display', 'none', 'important');
+    if (btnSchool) btnSchool.style.display = 'none';
+    if (btnAdmin)  btnAdmin.classList.add('active');
+  } else {
+    panelSchool.style.setProperty('display', 'block', 'important');
+    panelAdmin.style.setProperty('display', 'none', 'important');
+    if (btnAdmin)  btnAdmin.style.display = 'none';
+    if (btnSchool) btnSchool.classList.add('active');
+  }
 });
 </script>
 
@@ -878,7 +885,7 @@ document.addEventListener('DOMContentLoaded', function() {
   </div><!-- end school panel -->
 
   <!-- ============================== ADMIN TAB ============================== -->
-  <div class="tab-panel" id="panel-admin">
+  <div class="tab-panel" id="panel-admin" style="display:none;">
 
     <!-- ADMIN LOGIN FORM -->
     <div id="adminLoginView" style="display:block;">
