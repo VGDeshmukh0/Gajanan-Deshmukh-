@@ -1067,7 +1067,8 @@ let currentOrderId = null;
 
 // URL-based view: ?view=school or ?view=admin
 const urlParams = new URLSearchParams(window.location.search);
-const VIEW_MODE = urlParams.get('view') || 'both';
+const hashView = window.location.hash.replace('#','');
+const VIEW_MODE = hashView || urlParams.get('view') || 'both';
 
 // ── Cloud helpers — Google Apps Script backend ──────────────
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbysQMEBj_mKieMvaJf8igpCElYNSjYCBLUUsJAfK9Ooa8SvatyKNTKJU9h9RcBdA-WM5w/exec';
