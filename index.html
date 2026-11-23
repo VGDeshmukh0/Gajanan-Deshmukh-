@@ -2484,8 +2484,32 @@ function saveExamLocks() {
   });
   saveData(data);
   toast('Exam locks saved!', 'success');
-  // School pill update
   updateSchoolExamPills();
+}
+
+function updateSchoolExamPills() {
+  const data = getData();
+  const locks = data.examLocks || {};
+  document.querySelectorAll('.exam-pill').forEach(pill => {
+    const examType = EXAM_TYPES.find(et => pill.textContent.trim().includes(et));
+    if (!examType) return;
+    const isLocked = locks[examType] === 'locked';
+    if (isLocked) {
+      pill.style.opacity = '0.45';
+      pill.style.cursor = 'not-allowed';
+      pill.style.borderColor = '#FFA726';
+      pill.style.color = '#E65100';
+      pill.title = `🔒 ${examType} — Admin ने बंद केली आहे`;
+      pill.onclick = (e) => { e.stopPropagation(); toast(`🔒 "${examType}" सध्या बंद आहे. Admin शी संपर्क करा.`, 'error'); };
+    } else {
+      pill.style.opacity = '1';
+      pill.style.cursor = 'pointer';
+      pill.style.borderColor = '';
+      pill.style.color = '';
+      pill.title = '';
+      pill.onclick = () => selectExam(examType);
+    }
+  });
 }
 
 function updateSchoolExamPills() {
